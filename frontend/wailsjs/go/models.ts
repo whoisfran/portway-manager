@@ -18,6 +18,7 @@ export namespace models {
 	    id: string;
 	    label: string;
 	    type: string;
+	    group?: string;
 	    localPort: number;
 	    remotePort: number;
 	    remoteHost?: string;
@@ -43,6 +44,7 @@ export namespace models {
 	        this.id = source["id"];
 	        this.label = source["label"];
 	        this.type = source["type"];
+	        this.group = source["group"];
 	        this.localPort = source["localPort"];
 	        this.remotePort = source["remotePort"];
 	        this.remoteHost = source["remoteHost"];

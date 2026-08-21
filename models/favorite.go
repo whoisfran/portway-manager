@@ -33,6 +33,10 @@ type Favorite struct {
 	ID    string       `json:"id"`
 	Label string       `json:"label"`
 	Type  FavoriteType `json:"type"`
+	// Group es un nombre libre para agrupar perfiles en la lista
+	// (p.ej. "Producción", "Cliente ACME"); puramente organizativo,
+	// no lo usa ningun TunnelStrategy ni afecta como se abre el tunel.
+	Group string `json:"group,omitempty"`
 
 	// Comunes a SSM y SSH: puerto local donde escucha el tunel y, si
 	// RemoteHost viene vacio, el destino es el target mismo -- la

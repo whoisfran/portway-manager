@@ -19,6 +19,7 @@ function emptyProfile(): ConnectionProfile {
     id: '',
     label: '',
     type: 'ssm',
+    group: '',
     localPort: 0,
     remotePort: 0,
     remoteHost: '',
@@ -216,9 +217,14 @@ async function submit() {
           <USelect v-model="state.type" :items="typeOptions" class="w-full" />
         </UFormField>
 
-        <UFormField label="Nombre" required>
-          <UInput v-model="state.label" placeholder="ej. DB producción" class="w-full" />
-        </UFormField>
+        <div class="grid grid-cols-2 gap-4">
+          <UFormField label="Nombre" required>
+            <UInput v-model="state.label" placeholder="ej. DB producción" class="w-full" />
+          </UFormField>
+          <UFormField label="Grupo (opcional)">
+            <UInput v-model="state.group" placeholder="ej. Cliente ACME" class="w-full" />
+          </UFormField>
+        </div>
 
         <template v-if="state.type === 'ssm'">
           <div class="grid grid-cols-2 gap-4">

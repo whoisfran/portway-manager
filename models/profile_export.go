@@ -13,6 +13,7 @@ const ProfileExportVersion = 1
 type ExportedProfile struct {
 	Label      string       `json:"label"`
 	Type       FavoriteType `json:"type"`
+	Group      string       `json:"group,omitempty"`
 	LocalPort  int          `json:"localPort"`
 	RemotePort int          `json:"remotePort"`
 	RemoteHost string       `json:"remoteHost,omitempty"`

@@ -35,6 +35,7 @@ func (s *profileTransferService) Export() (models.ProfileExport, error) {
 		items = append(items, models.ExportedProfile{
 			Label:         p.Label,
 			Type:          p.Type,
+			Group:         p.Group,
 			LocalPort:     p.LocalPort,
 			RemotePort:    p.RemotePort,
 			RemoteHost:    p.RemoteHost,
@@ -80,6 +81,7 @@ func (s *profileTransferService) Import(export models.ProfileExport) (models.Imp
 		_, err := s.profiles.Save(models.Favorite{
 			Label:         label,
 			Type:          favoriteType,
+			Group:         item.Group,
 			LocalPort:     item.LocalPort,
 			RemotePort:    item.RemotePort,
 			RemoteHost:    item.RemoteHost,

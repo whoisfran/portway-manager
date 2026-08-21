@@ -27,6 +27,8 @@ export type ConnectionProfile = {
 	label: string;
 	/** 'ssm' | 'ssh' en la practica, pero string abierto (ver TunnelStatus) porque asi lo emiten los bindings generados. */
 	type: string;
+	/** Nombre libre para agrupar perfiles en la lista (p.ej. "Producción"); puramente organizativo. */
+	group?: string;
 	localPort: number;
 	remotePort: number;
 	/** Si va vacio, el tunel apunta directo al target (la instancia en SSM, o "localhost" visto desde el servidor SSH). */
