@@ -135,9 +135,17 @@ func (s *strategy) Start(req models.TunnelRequest) (domain.RunningSession, error
 	remoteAddr := net.JoinHostPort(remoteHost, strconv.Itoa(req.RemotePort))
 
 	sess := newSession(listener, client)
-	sess.logf("tunel SSH listo: 127.0.0.1:%d -> %s (via %s@%s)", req.LocalPort, remoteAddr, req.User, req.Host)
 
-	go sess.acceptLoop(remoteAddr)
+	// El primer log (y acceptLoop) se mandan en la goroutine, nunca
+	// aqui: sess.logf escribe a un io.Pipe, cuyo Write bloquea hasta
+	// que algo lo lea -- y el lector (ver tunnel_service.go: pump)
+	// recien se conecta despues de que Start() retorna. Escribirlo
+	// aqui, antes de devolver sess, dejaria a Start() esperando para
+	// siempre a un lector que no puede aparecer todavia.
+	go func() {
+		sess.logf("tunel SSH listo: 127.0.0.1:%d -> %s (via %s@%s)", req.LocalPort, remoteAddr, req.User, req.Host)
+		sess.acceptLoop(remoteAddr)
+	}()
 
 	return sess, nil
 }
