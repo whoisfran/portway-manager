@@ -16,6 +16,8 @@ import (
 
 	"ssm-portway/internal/application"
 	"ssm-portway/internal/infrastructure"
+	"ssm-portway/internal/infrastructure/ssh"
+	"ssm-portway/internal/infrastructure/ssm"
 )
 
 //go:embed all:frontend/dist
@@ -41,24 +43,29 @@ func main() {
 		log.Fatalf("no se pudo inicializar el almacen de perfiles: %v", err)
 	}
 
-	sessionRunner := infrastructure.NewSSMSessionRunner()
+	tunnelStrategies := infrastructure.NewTunnelStrategyRegistry(
+		ssm.NewTunnelStrategy(),
+		ssh.NewTunnelStrategy(),
+	)
+
 	eventPublisher := infrastructure.NewWailsEventPublisher()
 	portChecker := infrastructure.NewTCPPortAvailabilityChecker()
-	instanceLister := infrastructure.NewAWSInstanceLister()
-	prerequisitesChecker := infrastructure.NewSystemPrerequisitesChecker()
+	instanceLister := ssm.NewAWSInstanceLister()
+	prerequisitesChecker := ssm.NewPrerequisitesChecker()
 	awsProfileLister := infrastructure.NewLocalAWSProfileLister()
 	profileExportGateway := infrastructure.NewJSONProfileExportGateway()
 
-	profileService := application.NewProfileService(profileStore)
+	profileService := application.NewProfileService(profileStore, tunnelStrategies)
 
 	app := NewApp(
-		application.NewTunnelService(sessionRunner, eventPublisher, portChecker),
+		application.NewTunnelService(tunnelStrategies, eventPublisher, portChecker),
 		profileService,
 		application.NewProfileTransferService(profileService),
 		profileExportGateway,
 		prerequisitesChecker,
 		awsProfileLister,
 		instanceLister,
+		tunnelStrategies,
 	)
 
 	// El icono de la bandeja del sistema corre en su propio bucle nativo

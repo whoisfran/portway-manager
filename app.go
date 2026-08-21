@@ -23,6 +23,7 @@ type App struct {
 	prerequisitesChecker   domain.PrerequisitesChecker
 	awsProfileLister       domain.AWSProfileLister
 	instanceLister         domain.InstanceLister
+	tunnelStrategies       domain.TunnelStrategyRegistry
 }
 
 func NewApp(
@@ -33,6 +34,7 @@ func NewApp(
 	prerequisitesChecker domain.PrerequisitesChecker,
 	awsProfileLister domain.AWSProfileLister,
 	instanceLister domain.InstanceLister,
+	tunnelStrategies domain.TunnelStrategyRegistry,
 ) *App {
 	return &App{
 		tunnelService:          tunnelService,
@@ -42,6 +44,7 @@ func NewApp(
 		prerequisitesChecker:   prerequisitesChecker,
 		awsProfileLister:       awsProfileLister,
 		instanceLister:         instanceLister,
+		tunnelStrategies:       tunnelStrategies,
 	}
 }
 
@@ -118,16 +121,12 @@ func (a *App) StartTunnel(favoriteID string) (*models.Tunnel, error) {
 		return nil, err
 	}
 
-	return a.tunnelService.Start(models.TunnelRequest{
-		FavoriteID:    favorite.ID,
-		Profile:       favorite.Profile,
-		Region:        favorite.Region,
-		InstanceID:    favorite.InstanceID,
-		InstanceLabel: favorite.InstanceLabel,
-		LocalPort:     favorite.LocalPort,
-		RemotePort:    favorite.RemotePort,
-		RemoteHost:    favorite.RemoteHost,
-	})
+	strategy, err := a.tunnelStrategies.Strategy(favorite.Type)
+	if err != nil {
+		return nil, err
+	}
+
+	return a.tunnelService.Start(strategy.BuildRequest(favorite))
 }
 
 func (a *App) StopTunnel(id string) error {

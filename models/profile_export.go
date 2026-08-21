@@ -6,18 +6,27 @@ package models
 const ProfileExportVersion = 1
 
 // ExportedProfile es un perfil de conexion listo para compartir: sin
-// el ID interno (se regenera al importar) y sin el nombre del perfil
-// de AWS local (el campo "profile" de Favorite), que es especifico
-// del equipo de cada usuario y nunca deberia viajar en un archivo que
-// se comparte con otra persona.
+// el ID interno (se regenera al importar) y sin ningun dato especifico
+// del equipo de quien lo exporta o secreto -- el perfil de AWS local
+// (campo "profile" de Favorite), y en SSH la password/passphrase/ruta
+// de llave privada. Quien importa debe poner los suyos.
 type ExportedProfile struct {
-	Label         string `json:"label"`
-	Region        string `json:"region"`
-	InstanceID    string `json:"instanceId"`
-	InstanceLabel string `json:"instanceLabel"`
-	LocalPort     int    `json:"localPort"`
-	RemotePort    int    `json:"remotePort"`
-	RemoteHost    string `json:"remoteHost"`
+	Label      string       `json:"label"`
+	Type       FavoriteType `json:"type"`
+	LocalPort  int          `json:"localPort"`
+	RemotePort int          `json:"remotePort"`
+	RemoteHost string       `json:"remoteHost,omitempty"`
+
+	// SSM
+	Region        string `json:"region,omitempty"`
+	InstanceID    string `json:"instanceId,omitempty"`
+	InstanceLabel string `json:"instanceLabel,omitempty"`
+
+	// SSH
+	Host       string        `json:"host,omitempty"`
+	Port       int           `json:"port,omitempty"`
+	User       string        `json:"user,omitempty"`
+	AuthMethod SSHAuthMethod `json:"authMethod,omitempty"`
 }
 
 // ProfileExport es el archivo que se exporta/importa.

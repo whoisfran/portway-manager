@@ -34,12 +34,19 @@ func (s *profileTransferService) Export() (models.ProfileExport, error) {
 	for _, p := range saved {
 		items = append(items, models.ExportedProfile{
 			Label:         p.Label,
-			Region:        p.Region,
-			InstanceID:    p.InstanceID,
-			InstanceLabel: p.InstanceLabel,
+			Type:          p.Type,
 			LocalPort:     p.LocalPort,
 			RemotePort:    p.RemotePort,
 			RemoteHost:    p.RemoteHost,
+			Region:        p.Region,
+			InstanceID:    p.InstanceID,
+			InstanceLabel: p.InstanceLabel,
+			Host:          p.Host,
+			Port:          p.Port,
+			User:          p.User,
+			AuthMethod:    p.AuthMethod,
+			// Password/Passphrase/PrivateKeyPath quedan fuera a
+			// proposito -- ver el comentario en ExportedProfile.
 		})
 	}
 
@@ -63,16 +70,30 @@ func (s *profileTransferService) Import(export models.ProfileExport) (models.Imp
 	for _, item := range export.Profiles {
 		label := disambiguate(item.Label, existingLabels)
 
+		// Los archivos exportados antes de que existiera FavoriteType
+		// no tienen "type"; en ese entonces solo existian perfiles SSM.
+		favoriteType := item.Type
+		if favoriteType == "" {
+			favoriteType = models.FavoriteTypeSSM
+		}
+
 		_, err := s.profiles.Save(models.Favorite{
 			Label:         label,
-			Region:        item.Region,
-			InstanceID:    item.InstanceID,
-			InstanceLabel: item.InstanceLabel,
+			Type:          favoriteType,
 			LocalPort:     item.LocalPort,
 			RemotePort:    item.RemotePort,
 			RemoteHost:    item.RemoteHost,
+			Region:        item.Region,
+			InstanceID:    item.InstanceID,
+			InstanceLabel: item.InstanceLabel,
+			Host:          item.Host,
+			Port:          item.Port,
+			User:          item.User,
+			AuthMethod:    item.AuthMethod,
 			// Profile queda vacio a proposito: el usuario debe elegir
 			// cual de sus perfiles de AWS locales usar para esta conexion.
+			// Password/Passphrase/PrivateKeyPath tambien, si es SSH: el
+			// archivo exportado nunca las incluyo (ver ExportedProfile).
 		})
 		if err != nil {
 			result.Failures = append(result.Failures, models.ImportFailure{Label: item.Label, Reason: err.Error()})

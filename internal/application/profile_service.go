@@ -23,11 +23,12 @@ type ProfileService interface {
 }
 
 type profileService struct {
-	repo domain.ProfileRepository
+	repo       domain.ProfileRepository
+	strategies domain.TunnelStrategyRegistry
 }
 
-func NewProfileService(repo domain.ProfileRepository) ProfileService {
-	return &profileService{repo: repo}
+func NewProfileService(repo domain.ProfileRepository, strategies domain.TunnelStrategyRegistry) ProfileService {
+	return &profileService{repo: repo, strategies: strategies}
 }
 
 func (s *profileService) List() ([]models.Favorite, error) {
@@ -50,7 +51,11 @@ func (s *profileService) Get(id string) (models.Favorite, error) {
 // Save valida el perfil y le asigna un ID nuevo si es la primera vez
 // que se guarda; si ya tiene ID, actualiza el existente.
 func (s *profileService) Save(profile models.Favorite) (models.Favorite, error) {
-	if err := profile.Validate(); err != nil {
+	strategy, err := s.strategies.Strategy(profile.Type)
+	if err != nil {
+		return profile, err
+	}
+	if err := strategy.ValidateFavorite(profile); err != nil {
 		return profile, err
 	}
 

@@ -38,24 +38,25 @@ type tunnelManager struct {
 	mu          sync.Mutex
 	tunnels     map[string]*models.Tunnel
 	sessions    map[string]domain.RunningSession
-	runner      domain.SessionRunner
+	strategies  domain.TunnelStrategyRegistry
 	publisher   domain.EventPublisher
 	portChecker domain.PortAvailabilityChecker
 }
 
-// NewTunnelService crea un TunnelService a partir del runner que
-// abrira los procesos de sesion SSM, el publisher que notificara sus
-// cambios de estado, y el checker que valida que el puerto local no
-// este ya ocupado antes de intentar abrir el tunel.
+// NewTunnelService crea un TunnelService a partir del registro que
+// resuelve la estrategia (SSM o SSH) de cada solicitud, el publisher
+// que notificara sus cambios de estado, y el checker que valida que
+// el puerto local no este ya ocupado antes de intentar abrir el
+// tunel.
 func NewTunnelService(
-	runner domain.SessionRunner,
+	strategies domain.TunnelStrategyRegistry,
 	publisher domain.EventPublisher,
 	portChecker domain.PortAvailabilityChecker,
 ) TunnelService {
 	return &tunnelManager{
 		tunnels:     make(map[string]*models.Tunnel),
 		sessions:    make(map[string]domain.RunningSession),
-		runner:      runner,
+		strategies:  strategies,
 		publisher:   publisher,
 		portChecker: portChecker,
 	}
@@ -74,6 +75,14 @@ func (m *tunnelManager) Start(req models.TunnelRequest) (*models.Tunnel, error) 
 		return nil, err
 	}
 
+	strategy, err := m.strategies.Strategy(req.Type)
+	if err != nil {
+		return nil, err
+	}
+	if err := strategy.ValidateRequest(req); err != nil {
+		return nil, err
+	}
+
 	tunnel := &models.Tunnel{
 		ID:        uuid.NewString(),
 		Request:   req,
@@ -86,7 +95,7 @@ func (m *tunnelManager) Start(req models.TunnelRequest) (*models.Tunnel, error) 
 		m.mu.Unlock()
 		return nil, fmt.Errorf(
 			"el puerto local %d ya esta en uso por el tunel hacia %q",
-			req.LocalPort, conflict.Request.InstanceLabel,
+			req.LocalPort, conflict.Request.TargetLabel(),
 		)
 	}
 	// Se reserva el puerto de inmediato (antes de soltar el mutex) para
@@ -102,7 +111,7 @@ func (m *tunnelManager) Start(req models.TunnelRequest) (*models.Tunnel, error) 
 		return nil, fmt.Errorf("el puerto local %d ya esta en uso por otro proceso del sistema", req.LocalPort)
 	}
 
-	session, err := m.runner.Start(req)
+	session, err := strategy.Start(req)
 	if err != nil {
 		m.mu.Lock()
 		delete(m.tunnels, tunnel.ID)
@@ -153,7 +162,7 @@ func (m *tunnelManager) CheckPort(localPort int) models.PortStatus {
 		return models.PortStatus{
 			Available:      false,
 			InUseBySameApp: true,
-			ConflictLabel:  conflict.Request.InstanceLabel,
+			ConflictLabel:  conflict.Request.TargetLabel(),
 		}
 	}
 

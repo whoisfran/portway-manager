@@ -1,12 +1,7 @@
-// Package infrastructure contiene los adaptadores concretos: AWS SDK,
-// ejecucion de procesos del sistema, persistencia en disco y el
-// puente hacia el runtime de Wails. Implementan los puertos definidos
-// en internal/domain.
-package infrastructure
+package ssm
 
 import (
 	"fmt"
-	"io"
 	"os/exec"
 	"strconv"
 
@@ -15,27 +10,52 @@ import (
 	"ssm-portway/models"
 )
 
-// ssmSession adapta un *exec.Cmd al puerto domain.RunningSession.
-type ssmSession struct {
-	cmd    *exec.Cmd
-	stdout io.ReadCloser
-	stderr io.ReadCloser
+// strategy implementa domain.TunnelStrategy para tuneles de
+// port-forwarding via AWS Systems Manager: ejecuta "aws ssm
+// start-session" con el documento correspondiente.
+type strategy struct{}
+
+func NewTunnelStrategy() domain.TunnelStrategy {
+	return &strategy{}
 }
 
-func (s *ssmSession) Stdout() io.Reader { return s.stdout }
-func (s *ssmSession) Stderr() io.Reader { return s.stderr }
-func (s *ssmSession) Wait() error       { return s.cmd.Wait() }
-func (s *ssmSession) Kill() error       { return process.KillProcessTree(s.cmd) }
+func (s *strategy) Type() models.FavoriteType { return models.FavoriteTypeSSM }
 
-// ssmSessionRunner inicia tuneles de port-forwarding ejecutando
-// "aws ssm start-session" con el documento correspondiente.
-type ssmSessionRunner struct{}
-
-func NewSSMSessionRunner() domain.SessionRunner {
-	return &ssmSessionRunner{}
+func (s *strategy) ValidateFavorite(f models.Favorite) error {
+	if err := f.Validate(); err != nil {
+		return err
+	}
+	if f.InstanceID == "" {
+		return fmt.Errorf("debes seleccionar una instancia")
+	}
+	return nil
 }
 
-func (r *ssmSessionRunner) Start(req models.TunnelRequest) (domain.RunningSession, error) {
+func (s *strategy) BuildRequest(f models.Favorite) models.TunnelRequest {
+	return models.TunnelRequest{
+		FavoriteID:    f.ID,
+		Type:          models.FavoriteTypeSSM,
+		LocalPort:     f.LocalPort,
+		RemotePort:    f.RemotePort,
+		RemoteHost:    f.RemoteHost,
+		Profile:       f.Profile,
+		Region:        f.Region,
+		InstanceID:    f.InstanceID,
+		InstanceLabel: f.InstanceLabel,
+	}
+}
+
+func (s *strategy) ValidateRequest(req models.TunnelRequest) error {
+	if err := req.Validate(); err != nil {
+		return err
+	}
+	if req.InstanceID == "" {
+		return fmt.Errorf("debes seleccionar una instancia")
+	}
+	return nil
+}
+
+func (s *strategy) Start(req models.TunnelRequest) (domain.RunningSession, error) {
 	cmd := exec.Command("aws", buildSessionArgs(req)...)
 	process.SetProcAttr(cmd)
 
@@ -52,7 +72,7 @@ func (r *ssmSessionRunner) Start(req models.TunnelRequest) (domain.RunningSessio
 		return nil, err
 	}
 
-	return &ssmSession{cmd: cmd, stdout: stdout, stderr: stderr}, nil
+	return &session{cmd: cmd, stdout: stdout, stderr: stderr}, nil
 }
 
 // buildSessionArgs construye los argumentos del CLI: usa el documento

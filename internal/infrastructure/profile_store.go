@@ -48,6 +48,16 @@ func (s *jsonProfileStore) load() ([]models.Favorite, error) {
 	if err := json.Unmarshal(data, &profiles); err != nil {
 		return nil, err
 	}
+
+	// Los perfiles guardados antes de que existiera FavoriteType no
+	// tienen el campo "type" en disco; como en ese entonces solo
+	// existian tuneles SSM, se asumen como tales.
+	for i := range profiles {
+		if profiles[i].Type == "" {
+			profiles[i].Type = models.FavoriteTypeSSM
+		}
+	}
+
 	return profiles, nil
 }
 
@@ -56,7 +66,10 @@ func (s *jsonProfileStore) persist(profiles []models.Favorite) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(s.path, data, 0o644)
+	// 0600: los perfiles SSH pueden incluir password/passphrase en
+	// texto plano (ver models.Favorite), a diferencia de los SSM que
+	// nunca guardaron secretos aqui.
+	return os.WriteFile(s.path, data, 0o600)
 }
 
 func (s *jsonProfileStore) List() ([]models.Favorite, error) {

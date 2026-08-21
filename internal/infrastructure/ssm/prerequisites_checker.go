@@ -1,4 +1,4 @@
-package infrastructure
+package ssm
 
 import (
 	"os/exec"
@@ -10,16 +10,17 @@ import (
 
 var awsCliVersionRegex = regexp.MustCompile(`aws-cli/([0-9]+\.[0-9]+\.[0-9]+)`)
 
-// systemPrerequisitesChecker verifica que "aws" cli y
+// prerequisitesChecker verifica que "aws" cli y
 // "session-manager-plugin" existan en el PATH del sistema, ya que son
-// requeridos para abrir sesiones SSM.
-type systemPrerequisitesChecker struct{}
+// requeridos para abrir tuneles SSM. Los tuneles SSH no dependen de
+// ninguna herramienta externa (ver internal/infrastructure/ssh).
+type prerequisitesChecker struct{}
 
-func NewSystemPrerequisitesChecker() domain.PrerequisitesChecker {
-	return &systemPrerequisitesChecker{}
+func NewPrerequisitesChecker() domain.PrerequisitesChecker {
+	return &prerequisitesChecker{}
 }
 
-func (c *systemPrerequisitesChecker) Check() models.Prerequisites {
+func (c *prerequisitesChecker) Check() models.Prerequisites {
 	p := models.Prerequisites{}
 
 	if path, err := exec.LookPath("aws"); err == nil {
