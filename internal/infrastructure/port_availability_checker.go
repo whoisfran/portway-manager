@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 
-	"ssm-portway/internal/domain"
+	"portway-manager/internal/domain"
 )
 
 // tcpPortAvailabilityChecker verifica un puerto intentando escuchar

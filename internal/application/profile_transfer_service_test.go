@@ -3,7 +3,7 @@ package application
 import (
 	"testing"
 
-	"ssm-portway/models"
+	"portway-manager/models"
 )
 
 type fakeProfileService struct {

@@ -5,9 +5,9 @@ import (
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
-	"ssm-portway/internal/application"
-	"ssm-portway/internal/domain"
-	"ssm-portway/models"
+	"portway-manager/internal/application"
+	"portway-manager/internal/domain"
+	"portway-manager/models"
 )
 
 // App es el adaptador que Wails expone al frontend. No contiene
@@ -169,7 +169,7 @@ func (a *App) DeleteFavorite(id string) error {
 func (a *App) ExportFavorites() (string, error) {
 	path, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
 		Title:           "Exportar perfiles de conexión",
-		DefaultFilename: "ssm-portway-perfiles.json",
+		DefaultFilename: "portway-manager-perfiles.json",
 		Filters: []runtime.FileFilter{
 			{DisplayName: "JSON (*.json)", Pattern: "*.json"},
 		},

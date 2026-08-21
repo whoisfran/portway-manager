@@ -3,8 +3,8 @@ package infrastructure
 import (
 	"fmt"
 
-	"ssm-portway/internal/domain"
-	"ssm-portway/models"
+	"portway-manager/internal/domain"
+	"portway-manager/models"
 )
 
 // tunnelStrategyRegistry resuelve el domain.TunnelStrategy adecuado

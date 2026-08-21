@@ -42,26 +42,26 @@ A diferencia de macOS/Windows, `wails build` no empaqueta nada para Linux
 por si solo (solo produce el binario). El paquete RPM para Fedora se
 arma a mano, orquestado por `.github/workflows/release-linux-fedora.yaml`:
 
-- `linux/rpm/ssm-portway.spec.template` - Plantilla del spec de RPM. El
+- `linux/rpm/portway-manager.spec.template` - Plantilla del spec de RPM. El
   workflow reemplaza los tokens `{{.Info.*}}`/`{{.Author.*}}` (leidos de
-  `wails.json`) y los guarda como `linux/rpm/ssm-portway.spec` antes de
+  `wails.json`) y los guarda como `linux/rpm/portway-manager.spec` antes de
   correr `rpmbuild`. Ese `.spec` generado no se versiona (se regenera en
   cada build).
-- `linux/ssm-portway_0.0.0_amd64/usr/share/applications/ssm-portway.desktop` -
+- `linux/portway-manager_0.0.0_amd64/usr/share/applications/portway-manager.desktop` -
   Plantilla del `.desktop` (mismo mecanismo de tokens). El nombre de la
-  carpeta padre (`ssm-portway_0.0.0_amd64`) es solo la convencion de
+  carpeta padre (`portway-manager_0.0.0_amd64`) es solo la convencion de
   layout FHS que usa el workflow para ubicar el icono; no significa que
   exista una version "0.0.0" real.
-- `linux/ssm-portway_0.0.0_amd64/usr/share/icons/hicolor/512x512/apps/ssm-portway.png` -
+- `linux/portway-manager_0.0.0_amd64/usr/share/icons/hicolor/512x512/apps/portway-manager.png` -
   Icono en 512x512, generado desde `appicon.svg`.
 
 Para probar el empaquetado en un Fedora real (fuera de CI):
 
 ```bash
-wails build -platform linux/amd64 -tags webkit2_41 -o ssm-portway
+wails build -platform linux/amd64 -tags webkit2_41 -o portway-manager
 # rellenar los tokens del .spec/.desktop a mano o adaptar los pasos
 # "Setup spec template"/"Setup desktop template" del workflow, luego:
-rpmbuild --define "_topdir $PWD/build/linux/rpmbuild" -bb build/linux/rpm/ssm-portway.spec
+rpmbuild --define "_topdir $PWD/build/linux/rpmbuild" -bb build/linux/rpm/portway-manager.spec
 ```
 
 ## Icono
@@ -79,7 +79,7 @@ done
 convert /tmp/icon_{16,32,48,64,128,256}.png build/windows/icon.ico
 
 convert -background none -density 384 build/appicon.svg -resize 512x512 \
-  build/linux/ssm-portway_0.0.0_amd64/usr/share/icons/hicolor/512x512/apps/ssm-portway.png
+  build/linux/portway-manager_0.0.0_amd64/usr/share/icons/hicolor/512x512/apps/portway-manager.png
 ```
 
 macOS no necesita un paso manual: `wails build` genera el `.icns` a partir

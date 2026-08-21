@@ -1,4 +1,4 @@
-module ssm-portway
+module portway-manager
 
 go 1.25.0
 

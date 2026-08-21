@@ -8,8 +8,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 
-	"ssm-portway/internal/domain"
-	"ssm-portway/models"
+	"portway-manager/internal/domain"
+	"portway-manager/models"
 )
 
 // awsInstanceLister consulta SSM DescribeInstanceInformation y lo

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"ssm-portway/internal/domain"
-	"ssm-portway/models"
+	"portway-manager/internal/domain"
+	"portway-manager/models"
 )
 
 // jsonProfileExportGateway lee/escribe el archivo de exportacion de

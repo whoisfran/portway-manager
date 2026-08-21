@@ -12,7 +12,7 @@ import (
 	"github.com/energye/systray"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
-	"ssm-portway/models"
+	"portway-manager/models"
 )
 
 // maxTrayProfileSlots limita cuantas lineas de "perfiles activos" se
@@ -73,9 +73,9 @@ var trayDone = make(chan struct{})
 // el momento (getAppContext) en vez de recibirlo por parametro.
 func setupTray(app *App) {
 	systray.SetIcon(trayIconData)
-	systray.SetTooltip("SSM Portway")
+	systray.SetTooltip("Portway Manager")
 
-	mOpen := systray.AddMenuItem("Abrir", "Mostrar la ventana de SSM Portway")
+	mOpen := systray.AddMenuItem("Abrir", "Mostrar la ventana de Portway Manager")
 	systray.AddSeparator()
 
 	tray.header = systray.AddMenuItem("Sin conexiones activas", "")
@@ -91,7 +91,7 @@ func setupTray(app *App) {
 	tray.overflow.Hide()
 
 	systray.AddSeparator()
-	mQuit := systray.AddMenuItem("Salir", "Cerrar SSM Portway por completo (detiene los tuneles activos)")
+	mQuit := systray.AddMenuItem("Salir", "Cerrar Portway Manager por completo (detiene los tuneles activos)")
 
 	mOpen.Click(func() { showWindow(getAppContext()) })
 	// En Windows y macOS el clic izquierdo no muestra el menu por

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"ssm-portway/internal/domain"
-	"ssm-portway/models"
+	"portway-manager/internal/domain"
+	"portway-manager/models"
 )
 
 // fakeProfileRepo y fakeSecretStore son dobles en memoria: alcanza con

@@ -4,7 +4,7 @@ frontend/dist
 
 # Generados a partir de los .template en build-time (ver build/README.md),
 # no se versionan.
-build/linux/rpm/ssm-portway.spec
-build/linux/ssm-portway.desktop
+build/linux/rpm/portway-manager.spec
+build/linux/portway-manager.desktop
 build/linux/rpmbuild/
 build/linux/*.rpm

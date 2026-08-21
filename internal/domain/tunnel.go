@@ -8,7 +8,7 @@ import (
 	"context"
 	"io"
 
-	"ssm-portway/models"
+	"portway-manager/models"
 )
 
 // RunningSession representa un tunel de port-forwarding en ejecucion,

@@ -5,9 +5,9 @@ import (
 	"os/exec"
 	"strconv"
 
-	"ssm-portway/internal/domain"
-	"ssm-portway/internal/infrastructure/process"
-	"ssm-portway/models"
+	"portway-manager/internal/domain"
+	"portway-manager/internal/infrastructure/process"
+	"portway-manager/models"
 )
 
 // strategy implementa domain.TunnelStrategy para tuneles de

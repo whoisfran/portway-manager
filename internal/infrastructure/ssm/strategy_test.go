@@ -3,7 +3,7 @@ package ssm
 import (
 	"testing"
 
-	"ssm-portway/models"
+	"portway-manager/models"
 )
 
 func validFavorite() models.Favorite {

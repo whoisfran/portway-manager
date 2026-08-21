@@ -6,7 +6,7 @@ import (
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
-	"ssm-portway/internal/domain"
+	"portway-manager/internal/domain"
 )
 
 // wailsEventPublisher emite eventos hacia el frontend usando el

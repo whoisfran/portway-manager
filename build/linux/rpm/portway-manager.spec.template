@@ -1,4 +1,4 @@
-Name:           ssm-portway
+Name:           portway-manager
 Version:        {{.Info.ProductVersion}}
 Release:        1%{?dist}
 Summary:        {{.Info.Comments}}
@@ -17,14 +17,14 @@ mkdir -p %{buildroot}%{_bindir}
 mkdir -p %{buildroot}%{_datadir}/applications
 mkdir -p %{buildroot}%{_datadir}/icons/hicolor/512x512/apps
 
-install -m 0755 %{_sourcedir}/ssm-portway %{buildroot}%{_bindir}/ssm-portway
-install -m 0644 %{_sourcedir}/ssm-portway.desktop %{buildroot}%{_datadir}/applications/ssm-portway.desktop
-install -m 0644 %{_sourcedir}/ssm-portway.png %{buildroot}%{_datadir}/icons/hicolor/512x512/apps/ssm-portway.png
+install -m 0755 %{_sourcedir}/portway-manager %{buildroot}%{_bindir}/portway-manager
+install -m 0644 %{_sourcedir}/portway-manager.desktop %{buildroot}%{_datadir}/applications/portway-manager.desktop
+install -m 0644 %{_sourcedir}/portway-manager.png %{buildroot}%{_datadir}/icons/hicolor/512x512/apps/portway-manager.png
 
 %files
-%{_bindir}/ssm-portway
-%{_datadir}/applications/ssm-portway.desktop
-%{_datadir}/icons/hicolor/512x512/apps/ssm-portway.png
+%{_bindir}/portway-manager
+%{_datadir}/applications/portway-manager.desktop
+%{_datadir}/icons/hicolor/512x512/apps/portway-manager.png
 
 %post
 update-desktop-database &> /dev/null || :

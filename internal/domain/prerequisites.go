@@ -1,6 +1,6 @@
 package domain
 
-import "ssm-portway/models"
+import "portway-manager/models"
 
 // PrerequisitesChecker verifica que las herramientas de AWS necesarias
 // para abrir sesiones SSM (CLI y Session Manager Plugin) esten

@@ -3,7 +3,7 @@ package application
 import (
 	"fmt"
 
-	"ssm-portway/models"
+	"portway-manager/models"
 )
 
 // ProfileTransferService convierte entre los perfiles guardados y el

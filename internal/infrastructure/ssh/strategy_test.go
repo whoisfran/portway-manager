@@ -3,7 +3,7 @@ package ssh
 import (
 	"testing"
 
-	"ssm-portway/models"
+	"portway-manager/models"
 )
 
 func validPasswordFavorite() models.Favorite {

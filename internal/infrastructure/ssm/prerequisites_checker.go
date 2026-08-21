@@ -4,8 +4,8 @@ import (
 	"os/exec"
 	"regexp"
 
-	"ssm-portway/internal/domain"
-	"ssm-portway/models"
+	"portway-manager/internal/domain"
+	"portway-manager/models"
 )
 
 var awsCliVersionRegex = regexp.MustCompile(`aws-cli/([0-9]+\.[0-9]+\.[0-9]+)`)

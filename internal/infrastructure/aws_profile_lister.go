@@ -8,8 +8,8 @@ import (
 	"sort"
 	"strings"
 
-	"ssm-portway/internal/domain"
-	"ssm-portway/models"
+	"portway-manager/internal/domain"
+	"portway-manager/models"
 )
 
 var (

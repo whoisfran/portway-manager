@@ -89,13 +89,13 @@ jobs:
 
       - name: Compress portable binary
         working-directory: ./build/bin
-        run: Compress-Archive "ssm-portway.exe" "ssm-portway_Portable_${{ steps.normalise_version.outputs.version }}_${{ steps.normalise_platform.outputs.tag }}.zip"
+        run: Compress-Archive "portway-manager.exe" "portway-manager_Portable_${{ steps.normalise_version.outputs.version }}_${{ steps.normalise_platform.outputs.tag }}.zip"
 
       - name: Upload release asset (Portable)
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ steps.normalise_version.outputs.version }}
-          files: ./build/bin/ssm-portway_Portable_${{ steps.normalise_version.outputs.version }}_${{ steps.normalise_platform.outputs.tag }}.zip
+          files: ./build/bin/portway-manager_Portable_${{ steps.normalise_version.outputs.version }}_${{ steps.normalise_platform.outputs.tag }}.zip
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Windows NSIS installer
@@ -109,11 +109,11 @@ jobs:
 
       - name: Rename installer
         working-directory: ./build/bin
-        run: Rename-Item -Path "ssm-portway-${{ steps.normalise_platform_name.outputs.pname }}-installer.exe" -NewName "ssm-portway_Setup_${{ steps.normalise_version.outputs.version }}_${{ steps.normalise_platform.outputs.tag }}.exe"
+        run: Rename-Item -Path "portway-manager-${{ steps.normalise_platform_name.outputs.pname }}-installer.exe" -NewName "portway-manager_Setup_${{ steps.normalise_version.outputs.version }}_${{ steps.normalise_platform.outputs.tag }}.exe"
 
       - name: Upload release asset (Installer)
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ steps.normalise_version.outputs.version }}
-          files: ./build/bin/ssm-portway_Setup_${{ steps.normalise_version.outputs.version }}_${{ steps.normalise_platform.outputs.tag }}.exe
+          files: ./build/bin/portway-manager_Setup_${{ steps.normalise_version.outputs.version }}_${{ steps.normalise_platform.outputs.tag }}.exe
           token: ${{ secrets.GITHUB_TOKEN }}

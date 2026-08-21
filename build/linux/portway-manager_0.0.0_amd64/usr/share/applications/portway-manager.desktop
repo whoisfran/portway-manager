@@ -2,8 +2,8 @@
 Type=Application
 Name={{.Info.ProductName}}
 Comment={{.Info.Comments}}
-Exec=/usr/local/bin/ssm-portway
-Icon=ssm-portway
+Exec=/usr/local/bin/portway-manager
+Icon=portway-manager
 Terminal=false
 Categories=Network;Utility;
-StartupWMClass=ssm-portway
+StartupWMClass=portway-manager

@@ -7,15 +7,13 @@ import (
 	"path/filepath"
 	"sync"
 
-	"ssm-portway/internal/domain"
-	"ssm-portway/models"
+	"portway-manager/internal/domain"
+	"portway-manager/models"
 )
 
 // jsonProfileStore persiste los perfiles de conexion en un archivo
-// JSON dentro del directorio de configuracion del usuario (por
-// ejemplo, %AppData%/ssm-tunnel-manager en Windows o
-// ~/.config/ssm-tunnel-manager en Linux/macOS), fuera del alcance de
-// otras apps.
+// JSON dentro del directorio de configuracion de esta app (ver
+// AppConfigDir), fuera del alcance de otras apps.
 type jsonProfileStore struct {
 	mu   sync.Mutex
 	path string

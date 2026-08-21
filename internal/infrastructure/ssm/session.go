@@ -8,7 +8,7 @@ import (
 	"io"
 	"os/exec"
 
-	"ssm-portway/internal/infrastructure/process"
+	"portway-manager/internal/infrastructure/process"
 )
 
 // session adapta un *exec.Cmd al puerto domain.RunningSession.

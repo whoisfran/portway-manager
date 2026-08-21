@@ -6,14 +6,14 @@ import (
 
 	"github.com/zalando/go-keyring"
 
-	"ssm-portway/internal/domain"
+	"portway-manager/internal/domain"
 )
 
 // keyringService agrupa todos los secretos de esta app bajo un mismo
 // "service" en el almacen de credenciales del sistema; cada secreto
 // se distingue por su "user" (ver profileService.passwordKey/
 // passphraseKey en internal/application).
-const keyringService = "ssm-portway"
+const keyringService = "portway-manager"
 
 // osKeyringSecretStore delega en el almacen de credenciales nativo
 // del sistema operativo (via github.com/zalando/go-keyring): Keychain

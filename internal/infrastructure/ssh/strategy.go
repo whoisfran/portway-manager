@@ -12,9 +12,9 @@ import (
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/knownhosts"
 
-	"ssm-portway/internal/domain"
-	"ssm-portway/internal/infrastructure"
-	"ssm-portway/models"
+	"portway-manager/internal/domain"
+	"portway-manager/internal/infrastructure"
+	"portway-manager/models"
 )
 
 // defaultSSHPort se usa cuando el favorito/solicitud no especifica un

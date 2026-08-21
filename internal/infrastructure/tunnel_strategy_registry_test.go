@@ -3,8 +3,8 @@ package infrastructure
 import (
 	"testing"
 
-	"ssm-portway/internal/domain"
-	"ssm-portway/models"
+	"portway-manager/internal/domain"
+	"portway-manager/models"
 )
 
 type fakeStrategy struct {

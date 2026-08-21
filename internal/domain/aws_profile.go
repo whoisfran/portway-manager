@@ -1,6 +1,6 @@
 package domain
 
-import "ssm-portway/models"
+import "portway-manager/models"
 
 // AWSProfileLister lista los perfiles de AWS configurados localmente
 // por el usuario (~/.aws/config y ~/.aws/credentials). Un mismo equipo

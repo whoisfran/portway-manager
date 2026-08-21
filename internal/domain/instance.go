@@ -3,7 +3,7 @@ package domain
 import (
 	"context"
 
-	"ssm-portway/models"
+	"portway-manager/models"
 )
 
 // InstanceLister consulta las instancias administradas por SSM

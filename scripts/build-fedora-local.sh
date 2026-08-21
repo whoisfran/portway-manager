@@ -31,41 +31,41 @@ jq --arg v "$VERSION" '.info.productVersion = $v' wails.json >wails.json.tmp
 mv wails.json.tmp wails.json
 
 echo "==> Compilando frontend + binario (wails build)"
-CGO_ENABLED=1 wails build -platform linux/amd64 -tags webkit2_41 -o ssm-portway
+CGO_ENABLED=1 wails build -platform linux/amd64 -tags webkit2_41 -o portway-manager
 
 echo "==> Generando spec y .desktop desde las plantillas"
-spec=$(cat build/linux/rpm/ssm-portway.spec.template)
+spec=$(cat build/linux/rpm/portway-manager.spec.template)
 spec=$(echo "$spec" | sed -e "s/{{.Info.ProductVersion}}/$VERSION/g")
 spec=$(echo "$spec" | sed -e "s/{{.Info.Comments}}/$(jq -r '.info.comments' wails.json)/g")
 spec=$(echo "$spec" | sed -e "s/{{.Author.Name}}/$(jq -r '.author.name' wails.json)/g")
 spec=$(echo "$spec" | sed -e "s/{{.libwebkit2gtk.PackageName}}/webkit2gtk4.1/g")
 spec=$(echo "$spec" | sed -e "s/{{.ChangelogDate}}/$(LC_ALL=C date -u +'%a %b %d %Y')/g")
-echo "$spec" >build/linux/rpm/ssm-portway.spec
+echo "$spec" >build/linux/rpm/portway-manager.spec
 
-desktop=$(cat "build/linux/ssm-portway_0.0.0_amd64/usr/share/applications/ssm-portway.desktop")
+desktop=$(cat "build/linux/portway-manager_0.0.0_amd64/usr/share/applications/portway-manager.desktop")
 desktop=$(echo "$desktop" | sed -e "s/{{.Info.ProductName}}/$(jq -r '.info.productName' wails.json)/g")
 desktop=$(echo "$desktop" | sed -e "s/{{.Info.Comments}}/$(jq -r '.info.comments' wails.json)/g")
-desktop=$(echo "$desktop" | sed -e "s#/usr/local/bin/ssm-portway#/usr/bin/ssm-portway#g")
-echo "$desktop" >build/linux/ssm-portway.desktop
+desktop=$(echo "$desktop" | sed -e "s#/usr/local/bin/portway-manager#/usr/bin/portway-manager#g")
+echo "$desktop" >build/linux/portway-manager.desktop
 
 echo "==> Empaquetando el RPM"
 topdir="$ROOT_DIR/build/linux/rpmbuild"
 rm -rf "$topdir"
 mkdir -p "$topdir"/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
-install -m 0755 build/bin/ssm-portway "$topdir/SOURCES/ssm-portway"
-install -m 0644 "build/linux/ssm-portway_0.0.0_amd64/usr/share/icons/hicolor/512x512/apps/ssm-portway.png" "$topdir/SOURCES/ssm-portway.png"
-install -m 0644 build/linux/ssm-portway.desktop "$topdir/SOURCES/ssm-portway.desktop"
-cp build/linux/rpm/ssm-portway.spec "$topdir/SPECS/ssm-portway.spec"
+install -m 0755 build/bin/portway-manager "$topdir/SOURCES/portway-manager"
+install -m 0644 "build/linux/portway-manager_0.0.0_amd64/usr/share/icons/hicolor/512x512/apps/portway-manager.png" "$topdir/SOURCES/portway-manager.png"
+install -m 0644 build/linux/portway-manager.desktop "$topdir/SOURCES/portway-manager.desktop"
+cp build/linux/rpm/portway-manager.spec "$topdir/SPECS/portway-manager.spec"
 
-rpmbuild --define "_topdir $topdir" -bb "$topdir/SPECS/ssm-portway.spec"
+rpmbuild --define "_topdir $topdir" -bb "$topdir/SPECS/portway-manager.spec"
 
-output="build/linux/ssm-portway_${VERSION}_amd64.rpm"
+output="build/linux/portway-manager_${VERSION}_amd64.rpm"
 cp "$topdir"/RPMS/x86_64/*.rpm "$output"
 
 echo
 echo "Listo: $output"
 echo
 echo "Instalar:        sudo dnf install ./$output"
-echo "Desinstalar:      sudo dnf remove ssm-portway"
-echo "Probar el binario sin empaquetar: ./build/bin/ssm-portway"
+echo "Desinstalar:      sudo dnf remove portway-manager"
+echo "Probar el binario sin empaquetar: ./build/bin/portway-manager"

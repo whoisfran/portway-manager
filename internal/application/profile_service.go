@@ -5,8 +5,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"ssm-portway/internal/domain"
-	"ssm-portway/models"
+	"portway-manager/internal/domain"
+	"portway-manager/models"
 )
 
 // ProfileService valida y gestiona los perfiles de conexion guardados

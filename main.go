@@ -14,10 +14,10 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
-	"ssm-portway/internal/application"
-	"ssm-portway/internal/infrastructure"
-	"ssm-portway/internal/infrastructure/ssh"
-	"ssm-portway/internal/infrastructure/ssm"
+	"portway-manager/internal/application"
+	"portway-manager/internal/infrastructure"
+	"portway-manager/internal/infrastructure/ssh"
+	"portway-manager/internal/infrastructure/ssm"
 )
 
 //go:embed all:frontend/dist
@@ -28,7 +28,7 @@ var assets embed.FS
 var version = "dev"
 
 func main() {
-	log.Printf("SSM Portway %s", version)
+	log.Printf("Portway Manager %s", version)
 
 	// Debe llamarse antes que cualquier cosa relacionada con Wails: GTK
 	// se inicializa dentro de wails.Run, y para entonces ya es tarde
@@ -78,7 +78,7 @@ func main() {
 	trayStart()
 
 	err = wails.Run(&options.App{
-		Title:  "SSM Portway",
+		Title:  "Portway Manager",
 		Width:  1000,
 		Height: 680,
 		// La app esta pensada como un widget de escritorio pequeno, no
@@ -127,7 +127,7 @@ func main() {
 		// instancia corriendo, en vez de una segunda ventana se
 		// muestra la que ya estaba oculta.
 		SingleInstanceLock: &options.SingleInstanceLock{
-			UniqueId: "ssm-portway-3f2504e0-4f89-11d3-9a0c-0305e82c3301",
+			UniqueId: "portway-manager-3f2504e0-4f89-11d3-9a0c-0305e82c3301",
 			OnSecondInstanceLaunch: func(_ options.SecondInstanceData) {
 				showWindow(getAppContext())
 			},

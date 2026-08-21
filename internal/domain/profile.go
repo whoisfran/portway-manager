@@ -1,6 +1,6 @@
 package domain
 
-import "ssm-portway/models"
+import "portway-manager/models"
 
 // ProfileRepository persiste los perfiles de conexion guardados por el
 // usuario. La validacion de negocio vive en models.Favorite.Validate;

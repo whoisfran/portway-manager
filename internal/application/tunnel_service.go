@@ -13,8 +13,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"ssm-portway/internal/domain"
-	"ssm-portway/models"
+	"portway-manager/internal/domain"
+	"portway-manager/models"
 )
 
 // TunnelService orquesta el ciclo de vida de los tuneles de
