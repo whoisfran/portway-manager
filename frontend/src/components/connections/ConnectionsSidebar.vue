@@ -32,7 +32,7 @@ const expanded = ref(true);
         <UIcon name="i-lucide-inbox" class="size-5" />
         <span class="text-xs font-semibold select-none font-mono-data">Sin conexiones</span>
       </div>
-      <div v-else class="flex flex-col gap-1">
+      <div v-else class="flex flex-col gap-0.5">
         <ConnectionListItem
           v-for="profile in profilesStore.profiles"
           :key="profile.id"
