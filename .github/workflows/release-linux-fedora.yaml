@@ -1,0 +1,131 @@
+name: Release Linux App (Fedora RPM)
+run-name: ${{ github.event.release.tag_name || github.event.inputs.tag }}
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version tag'
+        required: true
+        default: '1.0.0'
+
+jobs:
+  release:
+    name: Release Fedora RPM
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        platform:
+          - linux/amd64
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Normalise platform tag
+        id: normalise_platform
+        shell: bash
+        run: |
+          tag=$(echo ${{ matrix.platform }} | sed -e 's/\//_/g')
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Normalise version tag
+        id: normalise_version
+        shell: bash
+        run: |
+          if [ "${{ github.event.release.tag_name }}" == "" ]; then
+            version=$(echo ${{ github.event.inputs.tag }} | sed -e 's/v//g')
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+          else
+            version=$(echo ${{ github.event.release.tag_name }} | sed -e 's/v//g')
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: stable
+
+      - name: Install wails
+        shell: bash
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Install Ubuntu prerequisites
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libfuse-dev libfuse2 rpm
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+
+      - name: Build frontend assets
+        shell: bash
+        run: |
+          npm install -g npm@9
+          jq '.info.productVersion = "${{ steps.normalise_version.outputs.version }}"' wails.json > tmp.json
+          mv tmp.json wails.json
+          cd frontend
+          jq '.version = "${{ steps.normalise_version.outputs.version }}"' package.json > tmp.json
+          mv tmp.json package.json
+          npm install
+
+      - name: Build wails app for Linux
+        shell: bash
+        run: |
+          CGO_ENABLED=1 wails build -platform ${{ matrix.platform }} \
+          -ldflags "-X main.version=v${{ steps.normalise_version.outputs.version }}" \
+          -tags webkit2_41 \
+          -o ssm-portway
+
+      - name: Setup spec template
+        shell: bash
+        run: |
+          content=$(cat build/linux/rpm/ssm-portway.spec.template)
+          content=$(echo "$content" | sed -e "s/{{.Info.ProductVersion}}/$(jq -r '.info.productVersion' wails.json)/g")
+          content=$(echo "$content" | sed -e "s/{{.Info.Comments}}/$(jq -r '.info.comments' wails.json)/g")
+          content=$(echo "$content" | sed -e "s/{{.Author.Name}}/$(jq -r '.author.name' wails.json)/g")
+          content=$(echo "$content" | sed -e "s/{{.libwebkit2gtk.PackageName}}/webkit2gtk4.1/g")
+          content=$(echo "$content" | sed -e "s/{{.ChangelogDate}}/$(LC_ALL=C date -u +'%a %b %d %Y')/g")
+          echo "$content" > build/linux/rpm/ssm-portway.spec
+
+      - name: Setup desktop template
+        shell: bash
+        run: |
+          content=$(cat build/linux/ssm-portway_0.0.0_amd64/usr/share/applications/ssm-portway.desktop)
+          content=$(echo "$content" | sed -e "s/{{.Info.ProductName}}/$(jq -r '.info.productName' wails.json)/g")
+          content=$(echo "$content" | sed -e "s/{{.Info.Comments}}/$(jq -r '.info.comments' wails.json)/g")
+          content=$(echo "$content" | sed -e "s#/usr/local/bin/ssm-portway#/usr/bin/ssm-portway#g")
+          echo "$content" > build/linux/ssm-portway.desktop
+
+      - name: Package up rpm file
+        shell: bash
+        run: |
+          topdir="$PWD/build/linux/rpmbuild"
+          rm -rf "$topdir"
+          mkdir -p "$topdir"/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+
+          install -m 0755 build/bin/ssm-portway "$topdir/SOURCES/ssm-portway"
+          install -m 0644 build/linux/ssm-portway_0.0.0_amd64/usr/share/icons/hicolor/512x512/apps/ssm-portway.png "$topdir/SOURCES/ssm-portway.png"
+          install -m 0644 build/linux/ssm-portway.desktop "$topdir/SOURCES/ssm-portway.desktop"
+          cp build/linux/rpm/ssm-portway.spec "$topdir/SPECS/ssm-portway.spec"
+
+          rpmbuild --define "_topdir $topdir" -bb "$topdir/SPECS/ssm-portway.spec"
+
+          cp "$topdir"/RPMS/x86_64/*.rpm "build/linux/ssm-portway_${{ steps.normalise_version.outputs.version }}_amd64.rpm"
+
+      - name: Rename rpm
+        working-directory: ./build/linux
+        run: mv "ssm-portway_${{ steps.normalise_version.outputs.version }}_amd64.rpm" "ssm-portway_${{ steps.normalise_version.outputs.version }}_${{ steps.normalise_platform.outputs.tag }}.fedora.rpm"
+
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.normalise_version.outputs.version }}
+          files: |
+            ./build/linux/ssm-portway_${{ steps.normalise_version.outputs.version }}_${{ steps.normalise_platform.outputs.tag }}.fedora.rpm
+          token: ${{ secrets.GITHUB_TOKEN }}

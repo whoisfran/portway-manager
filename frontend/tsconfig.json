@@ -1,0 +1,32 @@
+{
+	"compilerOptions": {
+		"target": "ESNext",
+		"useDefineForClassFields": true,
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"strict": true,
+		"jsx": "preserve",
+		"sourceMap": true,
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"esModuleInterop": true,
+		"lib": ["ESNext", "DOM"],
+		"skipLibCheck": true,
+		"paths": {
+			"@/*": ["./src/*"],
+			"@/assets/*": ["./src/assets/*"],
+			"@/layouts/*": ["./src/layouts/*"],
+			"@/components/*": ["./src/components/*"],
+			"@/composables/*": ["./src/composables/*"],
+			"@/types/*": ["./src/types/*"],
+			"@wailsjs/*": ["./wailsjs/*"],
+			"#build/ui/*": ["./node_modules/.nuxt-ui/ui/*"]
+		}
+	},
+	"include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "auto-imports.d.ts", "components.d.ts"],
+	"references": [
+		{
+			"path": "./tsconfig.node.json"
+		}
+	]
+}

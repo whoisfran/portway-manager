@@ -1,0 +1,19 @@
+{
+	"$schema": "https://wails.io/schemas/config.v2.json",
+	"name": "ssm-portway",
+	"outputfilename": "ssm-portway",
+	"frontend:install": "npm install",
+	"frontend:build": "npm run build",
+	"frontend:dev:watcher": "npm run dev",
+	"frontend:dev:serverUrl": "auto",
+	"author": {
+		"name": "Francisco Huchin"
+	},
+	"info": {
+		"companyName": "Francisco Huchin",
+		"productName": "SSM Portway",
+		"productVersion": "0.3.0",
+		"copyright": "Copyright © 2026 Francisco Huchin",
+		"comments": "Cliente de escritorio para abrir tuneles de AWS Systems Manager (SSM) con perfiles de conexion guardados"
+	}
+}

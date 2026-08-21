@@ -1,0 +1,56 @@
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-mono/600.css';
+@import '@fontsource/ibm-plex-mono/700.css';
+
+@import 'tailwindcss';
+@import '@nuxt/ui';
+
+@theme static {
+	--font-sans: 'Inter', sans-serif;
+	--font-mono: 'IBM Plex Mono', monospace;
+}
+
+:root,
+.dark {
+	--ui-bg: #101820;
+	--ui-bg-elevated: #141c24;
+	--ui-border: #2a2c32;
+	--ui-text: #ececef;
+	--ui-text-muted: #8a8d94;
+	--ui-text-dimmed: #5b5e65;
+}
+
+html {
+	color-scheme: dark;
+	height: 100%;
+	background: transparent;
+}
+
+body {
+	height: 100%;
+	margin: 0;
+	background: transparent;
+	overflow: hidden;
+}
+
+#app {
+	height: 100%;
+	border-radius: 12px;
+	background: var(--ui-bg);
+	overflow: hidden;
+}
+
+.font-mono-data {
+	font-family: var(--font-mono);
+}
+
+.app-region-drag {
+	--wails-draggable: drag;
+}
+.app-region-no-drag {
+	--wails-draggable: no-drag;
+}

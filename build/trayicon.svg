@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <!--
+    Isotipo para la bandeja del sistema: el mismo arco/portal de
+    appicon.svg, pero re-dibujado en un canvas de 32x32 con una banda
+    mas gruesa y sin fondo ni degradado. A esta escala, el mismo
+    grosor de banda y margen relativo del icono de 512px se volvia una
+    mancha ilegible a 16-24px. Usa el mismo azul de marca que el
+    degradado de appicon.svg (#4f8cf7).
+  -->
+  <path
+    fill-rule="evenodd"
+    fill="#4f8cf7"
+    d="M3,29 L3,21 A13,13 0 0 1 29,21 L29,29 Z
+       M9,29 L9,21 A7,7 0 0 1 23,21 L23,29 Z" />
+</svg>

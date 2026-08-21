@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name={{.Info.ProductName}}
+Comment={{.Info.Comments}}
+Exec=/usr/local/bin/ssm-portway
+Icon=ssm-portway
+Terminal=false
+Categories=Network;Utility;
+StartupWMClass=ssm-portway

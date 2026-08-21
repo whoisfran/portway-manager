@@ -1,0 +1,39 @@
+Name:           ssm-portway
+Version:        {{.Info.ProductVersion}}
+Release:        1%{?dist}
+Summary:        {{.Info.Comments}}
+
+License:        MIT
+Packager:       {{.Author.Name}}
+
+Requires:       {{.libwebkit2gtk.PackageName}}, gtk3
+BuildArch:      x86_64
+
+%description
+{{.Info.Comments}}
+
+%install
+mkdir -p %{buildroot}%{_bindir}
+mkdir -p %{buildroot}%{_datadir}/applications
+mkdir -p %{buildroot}%{_datadir}/icons/hicolor/512x512/apps
+
+install -m 0755 %{_sourcedir}/ssm-portway %{buildroot}%{_bindir}/ssm-portway
+install -m 0644 %{_sourcedir}/ssm-portway.desktop %{buildroot}%{_datadir}/applications/ssm-portway.desktop
+install -m 0644 %{_sourcedir}/ssm-portway.png %{buildroot}%{_datadir}/icons/hicolor/512x512/apps/ssm-portway.png
+
+%files
+%{_bindir}/ssm-portway
+%{_datadir}/applications/ssm-portway.desktop
+%{_datadir}/icons/hicolor/512x512/apps/ssm-portway.png
+
+%post
+update-desktop-database &> /dev/null || :
+gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
+
+%postun
+update-desktop-database &> /dev/null || :
+gtk-update-icon-cache %{_datadir}/icons/hicolor &> /dev/null || :
+
+%changelog
+* {{.ChangelogDate}} {{.Author.Name}} - {{.Info.ProductVersion}}-1
+- Release {{.Info.ProductVersion}}
