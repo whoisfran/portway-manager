@@ -21,7 +21,7 @@ function toggleMaximise() {
     @dblclick="toggleMaximise">
     <div class="flex items-center gap-2 select-none">
       <AppLogo :size="20" />
-      <span class="text-sm font-semibold">SSM Portway</span>
+      <span class="text-sm font-semibold">Portway Manager</span>
     </div>
 
     <div class="app-region-no-drag flex items-center gap-1">
