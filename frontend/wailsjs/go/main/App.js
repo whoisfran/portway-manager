@@ -58,6 +58,10 @@ export function OpenAwsInstallDocs() {
   return window['go']['main']['App']['OpenAwsInstallDocs']();
 }
 
+export function PickPrivateKeyFile() {
+  return window['go']['main']['App']['PickPrivateKeyFile']();
+}
+
 export function SaveFavorite(arg1) {
   return window['go']['main']['App']['SaveFavorite'](arg1);
 }

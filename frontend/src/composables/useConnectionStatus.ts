@@ -14,9 +14,10 @@ export type ConnectionStatus = {
  *
  * - verde:   el tunel esta corriendo (o arrancando).
  * - rojo:    el ultimo intento de tunel fallo.
- * - naranja: no es un fallo de conexion -- es que el perfil no tiene
- *            un perfil de AWS asignado (p.ej. recien importado), asi
- *            que ni siquiera se puede intentar conectar todavia.
+ * - naranja: no es un fallo de conexion -- es que al perfil le falta
+ *            algo minimo para poder intentar conectar (p.ej. recien
+ *            importado sin perfil de AWS, o una conexion SSH sin
+ *            host/usuario todavia).
  * - gris:    sin tunel activo, pero configurado correctamente.
  */
 export function connectionStatus(profile: ConnectionProfile, activeTunnel: Tunnel | undefined): ConnectionStatus {
@@ -26,7 +27,11 @@ export function connectionStatus(profile: ConnectionProfile, activeTunnel: Tunne
 	if (activeTunnel?.status === 'running' || activeTunnel?.status === 'starting') {
 		return { color: 'success', label: 'Listo' };
 	}
-	if (!profile.profile) {
+	if (profile.type === 'ssh') {
+		if (!profile.host || !profile.user) {
+			return { color: 'warning', label: 'Falta configurar el host SSH' };
+		}
+	} else if (!profile.profile) {
 		return { color: 'warning', label: 'Falta perfil de AWS' };
 	}
 	return { color: 'neutral', label: 'Detenido' };

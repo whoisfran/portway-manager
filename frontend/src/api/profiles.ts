@@ -1,4 +1,11 @@
-import { DeleteFavorite, ExportFavorites, ImportFavorites, ListFavorites, SaveFavorite } from '@wailsjs/go/main/App';
+import {
+	DeleteFavorite,
+	ExportFavorites,
+	ImportFavorites,
+	ListFavorites,
+	PickPrivateKeyFile,
+	SaveFavorite,
+} from '@wailsjs/go/main/App';
 import type { ConnectionProfile, ImportResult } from '@/types/domain';
 
 /** Adaptador sobre los bindings de Wails para los perfiles de conexion guardados. */
@@ -10,4 +17,6 @@ export const profilesApi = {
 	export: (): Promise<string> => ExportFavorites(),
 	/** Abre el dialogo nativo de apertura; importedCount es 0 si el usuario cancelo. */
 	import: (): Promise<ImportResult> => ImportFavorites(),
+	/** Abre el dialogo nativo para elegir la llave privada SSH; cadena vacia si el usuario cancelo. */
+	pickPrivateKeyFile: (): Promise<string> => PickPrivateKeyFile(),
 };

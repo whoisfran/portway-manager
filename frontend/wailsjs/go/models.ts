@@ -17,13 +17,21 @@ export namespace models {
 	export class Favorite {
 	    id: string;
 	    label: string;
-	    profile: string;
-	    region: string;
-	    instanceId: string;
-	    instanceLabel: string;
+	    type: string;
 	    localPort: number;
 	    remotePort: number;
-	    remoteHost: string;
+	    remoteHost?: string;
+	    profile?: string;
+	    region?: string;
+	    instanceId?: string;
+	    instanceLabel?: string;
+	    host?: string;
+	    port?: number;
+	    user?: string;
+	    authMethod?: string;
+	    password?: string;
+	    privateKeyPath?: string;
+	    passphrase?: string;
 	    lastConnectedAt?: string;
 	
 	    static createFrom(source: any = {}) {
@@ -34,13 +42,21 @@ export namespace models {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.label = source["label"];
+	        this.type = source["type"];
+	        this.localPort = source["localPort"];
+	        this.remotePort = source["remotePort"];
+	        this.remoteHost = source["remoteHost"];
 	        this.profile = source["profile"];
 	        this.region = source["region"];
 	        this.instanceId = source["instanceId"];
 	        this.instanceLabel = source["instanceLabel"];
-	        this.localPort = source["localPort"];
-	        this.remotePort = source["remotePort"];
-	        this.remoteHost = source["remoteHost"];
+	        this.host = source["host"];
+	        this.port = source["port"];
+	        this.user = source["user"];
+	        this.authMethod = source["authMethod"];
+	        this.password = source["password"];
+	        this.privateKeyPath = source["privateKeyPath"];
+	        this.passphrase = source["passphrase"];
 	        this.lastConnectedAt = source["lastConnectedAt"];
 	    }
 	}
@@ -150,13 +166,21 @@ export namespace models {
 	}
 	export class TunnelRequest {
 	    favoriteId: string;
-	    profile: string;
-	    region: string;
-	    instanceId: string;
-	    instanceLabel: string;
+	    type: string;
 	    localPort: number;
 	    remotePort: number;
-	    remoteHost: string;
+	    remoteHost?: string;
+	    profile?: string;
+	    region?: string;
+	    instanceId?: string;
+	    instanceLabel?: string;
+	    host?: string;
+	    port?: number;
+	    user?: string;
+	    authMethod?: string;
+	    password?: string;
+	    privateKeyPath?: string;
+	    passphrase?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new TunnelRequest(source);
@@ -165,13 +189,21 @@ export namespace models {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.favoriteId = source["favoriteId"];
+	        this.type = source["type"];
+	        this.localPort = source["localPort"];
+	        this.remotePort = source["remotePort"];
+	        this.remoteHost = source["remoteHost"];
 	        this.profile = source["profile"];
 	        this.region = source["region"];
 	        this.instanceId = source["instanceId"];
 	        this.instanceLabel = source["instanceLabel"];
-	        this.localPort = source["localPort"];
-	        this.remotePort = source["remotePort"];
-	        this.remoteHost = source["remoteHost"];
+	        this.host = source["host"];
+	        this.port = source["port"];
+	        this.user = source["user"];
+	        this.authMethod = source["authMethod"];
+	        this.password = source["password"];
+	        this.privateKeyPath = source["privateKeyPath"];
+	        this.passphrase = source["passphrase"];
 	    }
 	}
 	export class Tunnel {

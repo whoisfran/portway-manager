@@ -181,7 +181,7 @@ func watchTunnelStatus(ctx context.Context, app *App) {
 }
 
 func notifyTunnelEnded(ctx context.Context, app *App, tunnel *models.Tunnel) {
-	label := tunnelLabel(favoritesByID(app), tunnel)
+	label := tunnelDisplayLabel(favoritesByID(app), tunnel)
 
 	title := "Tunel detenido"
 	body := label
@@ -224,7 +224,7 @@ func refreshTrayProfiles(app *App) {
 			slot.Hide()
 			continue
 		}
-		slot.SetTitle(fmt.Sprintf("%s -> %d", tunnelLabel(favorites, tunnels[i]), tunnels[i].Request.LocalPort))
+		slot.SetTitle(fmt.Sprintf("%s -> %d", tunnelDisplayLabel(favorites, tunnels[i]), tunnels[i].Request.LocalPort))
 		slot.Show()
 	}
 
@@ -256,17 +256,28 @@ func favoritesByID(app *App) map[string]models.Favorite {
 // tunnelLabel resuelve el nombre a mostrar para un tunel: el Label del
 // perfil guardado que lo origino (lo que el usuario realmente le puso
 // al perfil, p.ej. "Develop DB"). Si el perfil ya no existe (se borro
-// mientras el tunel seguia activo) cae al nombre de la instancia o al
-// perfil de AWS, para no dejar la bandeja con un renglon en blanco.
+// mientras el tunel seguia activo) cae al nombre de la instancia, al
+// host SSH o al perfil de AWS, para no dejar la bandeja con un
+// renglon en blanco.
 func tunnelLabel(favorites map[string]models.Favorite, t *models.Tunnel) string {
 	if fav, ok := favorites[t.Request.FavoriteID]; ok && fav.Label != "" {
 		return fav.Label
 	}
-	if t.Request.InstanceLabel != "" {
-		return t.Request.InstanceLabel
+	return t.Request.TargetLabel()
+}
+
+// tunnelTypeLabel es el prefijo corto que distingue de un vistazo, en
+// el menu de la bandeja y en las notificaciones, si un tunel es una
+// sesion SSM o una conexion SSH.
+func tunnelTypeLabel(t models.FavoriteType) string {
+	if t == models.FavoriteTypeSSH {
+		return "SSH"
 	}
-	if t.Request.Profile != "" {
-		return t.Request.Profile
-	}
-	return t.Request.InstanceID
+	return "SSM"
+}
+
+// tunnelDisplayLabel combina el tipo de tunel con su nombre, p.ej.
+// "SSM Database" o "SSH Bastion".
+func tunnelDisplayLabel(favorites map[string]models.Favorite, t *models.Tunnel) string {
+	return fmt.Sprintf("%s %s", tunnelTypeLabel(t.Request.Type), tunnelLabel(favorites, t))
 }

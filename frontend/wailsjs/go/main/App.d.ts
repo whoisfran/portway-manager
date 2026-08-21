@@ -30,6 +30,8 @@ export function ListManagedInstances(arg1:string,arg2:string):Promise<Array<mode
 
 export function OpenAwsInstallDocs():Promise<void>;
 
+export function PickPrivateKeyFile():Promise<string>;
+
 export function SaveFavorite(arg1:models.Favorite):Promise<models.Favorite>;
 
 export function StartTunnel(arg1:string):Promise<models.Tunnel>;

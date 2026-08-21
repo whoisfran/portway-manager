@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
@@ -208,6 +210,34 @@ func (a *App) ImportFavorites() (models.ImportResult, error) {
 		return models.ImportResult{}, err
 	}
 	return a.profileTransferService.Import(export)
+}
+
+// ---------- Formulario de conexion SSH ----------
+
+// PickPrivateKeyFile abre un dialogo nativo para elegir el archivo de
+// la llave privada de una conexion SSH, en vez de que el usuario
+// tenga que escribir la ruta a mano (y arriesgarse a un typo). Si
+// existe ~/.ssh, el dialogo abre ahi de entrada -- es donde suelen
+// vivir estas llaves. Devuelve una ruta vacia (sin error) si el
+// usuario cierra el dialogo sin elegir nada.
+func (a *App) PickPrivateKeyFile() (string, error) {
+	options := runtime.OpenDialogOptions{
+		Title: "Seleccionar llave privada SSH",
+		// Muchos gestores de llaves (~/.ssh) son directorios ocultos;
+		// sin esto el usuario no podria ni navegar hasta sus llaves.
+		ShowHiddenFiles: true,
+	}
+	if home, err := os.UserHomeDir(); err == nil {
+		if sshDir := filepath.Join(home, ".ssh"); dirExists(sshDir) {
+			options.DefaultDirectory = sshDir
+		}
+	}
+	return runtime.OpenFileDialog(a.ctx, options)
+}
+
+func dirExists(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && info.IsDir()
 }
 
 // ---------- Documentacion ----------

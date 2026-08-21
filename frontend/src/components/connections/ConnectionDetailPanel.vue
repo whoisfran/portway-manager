@@ -22,23 +22,69 @@ const starting = ref(false);
 const stopping = ref(false);
 const confirmingDelete = ref(false);
 
+const typeLabel = computed(() => (profile.value?.type === 'ssh' ? 'SSH' : 'SSM'));
+
 const destination = computed(() => {
   if (!profile.value) return '';
+
+  if (profile.value.type === 'ssh') {
+    const target = profile.value.remoteHost
+      ? `${profile.value.remoteHost}:${profile.value.remotePort}`
+      : `localhost:${profile.value.remotePort}`;
+    const source = profile.value.user ? `${profile.value.user}@${profile.value.host}` : profile.value.host;
+    return `${source} · :${profile.value.localPort} → ${target}`;
+  }
+
   const target = profile.value.remoteHost
     ? `${profile.value.remoteHost}:${profile.value.remotePort}`
     : `${profile.value.instanceId}:${profile.value.remotePort}`;
   return `${profile.value.instanceLabel || profile.value.instanceId} · :${profile.value.localPort} → ${target}`;
 });
 
-const authMethod = computed(() => (profile.value ? awsEnvironment.authMethods[profile.value.profile] : undefined));
+const authMethod = computed(() =>
+  profile.value?.type === 'ssm' ? awsEnvironment.authMethods[profile.value.profile ?? ''] : undefined,
+);
 
+// Solo tiene sentido resolver el metodo de autenticacion de AWS (SSO,
+// rol asumido, claves...) para perfiles SSM; una conexion SSH no tiene
+// un "perfil de AWS" del que pedirlo.
 watch(
-  () => profile.value?.profile,
+  () => (profile.value?.type === 'ssm' ? profile.value?.profile : undefined),
   (awsProfile) => {
     if (awsProfile !== undefined) awsEnvironment.loadAuthMethod(awsProfile);
   },
   { immediate: true },
 );
+
+type DetailTile = { icon: string; label: string; value: string };
+
+// Que datos mostrar en la grilla de detalle depende del tipo de
+// conexion: un mismo layout (icono + etiqueta + valor) reutilizado
+// con contenido distinto, en vez de duplicar el markup por tipo.
+const detailTiles = computed<DetailTile[]>(() => {
+  if (!profile.value) return [];
+
+  if (profile.value.type === 'ssh') {
+    return [
+      { icon: 'i-lucide-server', label: 'Host', value: profile.value.host || '—' },
+      { icon: 'i-lucide-plug-2', label: 'Puerto SSH', value: String(profile.value.port || 22) },
+      { icon: 'i-lucide-user', label: 'Usuario', value: profile.value.user || '—' },
+      {
+        icon: 'i-lucide-key',
+        label: 'Autenticación',
+        value: profile.value.authMethod === 'privateKey' ? 'Llave privada' : 'Contraseña',
+      },
+      { icon: 'i-lucide-clock', label: 'Última conexión', value: formatLastConnected(profile.value.lastConnectedAt) },
+    ];
+  }
+
+  return [
+    { icon: 'i-lucide-cloud', label: 'Región', value: regionLabel(profile.value.region ?? '') },
+    { icon: 'i-lucide-wrench', label: 'Método', value: authMethod.value ?? '—' },
+    { icon: 'i-lucide-user', label: 'Perfil', value: profile.value.profile || 'Por defecto' },
+    { icon: 'i-lucide-clock', label: 'Última conexión', value: formatLastConnected(profile.value.lastConnectedAt) },
+  ];
+});
 
 function formatLastConnected(iso: string | undefined): string {
   if (!iso) return 'Nunca';
@@ -106,6 +152,7 @@ function clearLogs() {
       <div class="flex min-w-0 flex-col gap-1">
         <div class="flex items-center gap-2">
           <h2 class="truncate text-lg font-semibold">{{ profile.label }}</h2>
+          <UBadge :label="typeLabel" color="neutral" variant="subtle" size="sm" />
           <StatusBadge :profile="profile" :tunnel="activeTunnel" />
         </div>
         <p class="truncate font-mono-data text-xs text-muted">{{ destination }}</p>
@@ -126,32 +173,11 @@ function clearLogs() {
     </div>
 
     <div class="grid grid-cols-2 gap-4 border-b border-default px-4 py-4 text-sm">
-      <div class="flex items-start gap-2">
-        <UIcon name="i-lucide-cloud" class="mt-0.5 size-4 shrink-0 text-muted" />
+      <div v-for="tile in detailTiles" :key="tile.label" class="flex items-start gap-2">
+        <UIcon :name="tile.icon" class="mt-0.5 size-4 shrink-0 text-muted" />
         <div class="flex flex-col">
-          <span class="text-xs text-muted">Región</span>
-          <span>{{ regionLabel(profile.region) }}</span>
-        </div>
-      </div>
-      <div class="flex items-start gap-2">
-        <UIcon name="i-lucide-wrench" class="mt-0.5 size-4 shrink-0 text-muted" />
-        <div class="flex flex-col">
-          <span class="text-xs text-muted">Método</span>
-          <span>{{ authMethod ?? '—' }}</span>
-        </div>
-      </div>
-      <div class="flex items-start gap-2">
-        <UIcon name="i-lucide-user" class="mt-0.5 size-4 shrink-0 text-muted" />
-        <div class="flex flex-col">
-          <span class="text-xs text-muted">Perfil</span>
-          <span>{{ profile.profile || 'Por defecto' }}</span>
-        </div>
-      </div>
-      <div class="flex items-start gap-2">
-        <UIcon name="i-lucide-clock" class="mt-0.5 size-4 shrink-0 text-muted" />
-        <div class="flex flex-col">
-          <span class="text-xs text-muted">Última conexión</span>
-          <span>{{ formatLastConnected(profile.lastConnectedAt) }}</span>
+          <span class="text-xs text-muted">{{ tile.label }}</span>
+          <span>{{ tile.value }}</span>
         </div>
       </div>
     </div>

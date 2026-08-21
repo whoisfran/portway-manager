@@ -73,5 +73,24 @@ export const useProfilesStore = defineStore('profiles', () => {
 		return result;
 	}
 
-	return { profiles, loading, error, fetchAll, save, remove, duplicate, getById, markConnected, exportProfiles, importProfiles };
+	/** Devuelve la ruta elegida, o null si el usuario cerro el dialogo sin seleccionar nada. */
+	async function pickPrivateKeyFile(): Promise<string | null> {
+		const path = await profilesApi.pickPrivateKeyFile();
+		return path || null;
+	}
+
+	return {
+		profiles,
+		loading,
+		error,
+		fetchAll,
+		save,
+		remove,
+		duplicate,
+		getById,
+		markConnected,
+		exportProfiles,
+		importProfiles,
+		pickPrivateKeyFile,
+	};
 });

@@ -12,6 +12,17 @@ const profileUi = useProfileUiStore();
 
 const status = computed(() => connectionStatus(props.profile, tunnelsStore.findFor(props.profile)));
 
+const typeLabel = computed(() => (props.profile.type === 'ssh' ? 'SSH' : 'SSM'));
+
+// Segunda linea de la fila: region (SSM) o usuario@host (SSH), lo que
+// mejor identifica el destino de un vistazo sin abrir el detalle.
+const subtitle = computed(() => {
+  if (props.profile.type === 'ssh') {
+    return props.profile.user ? `${props.profile.user}@${props.profile.host ?? ''}` : props.profile.host ?? '';
+  }
+  return props.profile.region ?? '';
+});
+
 // Clases fijas de Tailwind (no las semanticas de Nuxt UI, que estan
 // pensadas para props de componente, no para usarse sueltas como
 // clase): verde=corriendo, naranja=falta configurar, rojo=fallo, gris=detenido.
@@ -34,7 +45,10 @@ const DOT_CLASS: Record<string, string> = {
 
     <span class="flex min-w-0 flex-1 flex-col">
       <span class="truncate text-sm font-medium">{{ profile.label }}</span>
-      <span class="truncate font-mono-data text-xs text-muted">{{ profile.region }}</span>
+      <span class="flex items-center gap-1.5">
+        <UBadge :label="typeLabel" color="neutral" variant="subtle" size="sm" class="shrink-0" />
+        <span class="truncate font-mono-data text-xs text-muted">{{ subtitle }}</span>
+      </span>
     </span>
 
     <UIcon name="i-lucide-chevron-right" class="size-4 shrink-0 text-dimmed" />
