@@ -22,14 +22,9 @@ type jsonProfileStore struct {
 }
 
 func NewJSONProfileStore() (domain.ProfileRepository, error) {
-	dir, err := os.UserConfigDir()
+	appDir, err := AppConfigDir()
 	if err != nil {
-		dir = "."
-	}
-
-	appDir := filepath.Join(dir, "ssm-tunnel-manager")
-	if err := os.MkdirAll(appDir, 0o755); err != nil {
-		return nil, fmt.Errorf("no se pudo crear el directorio de configuracion: %w", err)
+		return nil, err
 	}
 
 	return &jsonProfileStore{path: filepath.Join(appDir, "favorites.json")}, nil

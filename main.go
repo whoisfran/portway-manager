@@ -54,8 +54,9 @@ func main() {
 	prerequisitesChecker := ssm.NewPrerequisitesChecker()
 	awsProfileLister := infrastructure.NewLocalAWSProfileLister()
 	profileExportGateway := infrastructure.NewJSONProfileExportGateway()
+	secretStore := infrastructure.NewOSKeyringSecretStore()
 
-	profileService := application.NewProfileService(profileStore, tunnelStrategies)
+	profileService := application.NewProfileService(profileStore, tunnelStrategies, secretStore)
 
 	app := NewApp(
 		application.NewTunnelService(tunnelStrategies, eventPublisher, portChecker),
