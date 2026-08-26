@@ -80,24 +80,6 @@ jobs:
           mv tmp.json package.json
           npm install
 
-      - name: Build Windows portable app
-        shell: bash
-        run: |
-          CGO_ENABLED=1 wails build -clean -platform ${{ matrix.platform }} \
-          -webview2 embed \
-          -ldflags "-H=windowsgui -X main.version=v${{ steps.normalise_version.outputs.version }}"
-
-      - name: Compress portable binary
-        working-directory: ./build/bin
-        run: Compress-Archive "portway-manager.exe" "portway-manager_Portable_${{ steps.normalise_version.outputs.version }}_${{ steps.normalise_platform.outputs.tag }}.zip"
-
-      - name: Upload release asset (Portable)
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ steps.normalise_version.outputs.version }}
-          files: ./build/bin/portway-manager_Portable_${{ steps.normalise_version.outputs.version }}_${{ steps.normalise_platform.outputs.tag }}.zip
-          token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Build Windows NSIS installer
         shell: bash
         run: |
