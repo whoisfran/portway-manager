@@ -5,9 +5,14 @@ package process
 import (
 	"os/exec"
 	"strconv"
+	"syscall"
 )
 
 func SetProcAttr(cmd *exec.Cmd) {
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		HideWindow:    true,
+		CreationFlags: 0x08000000,
+	}
 }
 
 func KillProcessTree(cmd *exec.Cmd) error {
@@ -15,11 +20,16 @@ func KillProcessTree(cmd *exec.Cmd) error {
 		return nil
 	}
 
-	return exec.Command(
+	killCmd := exec.Command(
 		"taskkill",
 		"/T",
 		"/F",
 		"/PID",
 		strconv.Itoa(cmd.Process.Pid),
-	).Run()
+	)
+	killCmd.SysProcAttr = &syscall.SysProcAttr{
+		HideWindow:    true,
+		CreationFlags: 0x08000000,
+	}
+	return killCmd.Run()
 }

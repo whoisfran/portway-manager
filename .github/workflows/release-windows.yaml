@@ -85,7 +85,7 @@ jobs:
         run: |
           CGO_ENABLED=1 wails build -clean -platform ${{ matrix.platform }} \
           -webview2 embed \
-          -ldflags "-X main.version=v${{ steps.normalise_version.outputs.version }}"
+          -ldflags "-H=windowsgui -X main.version=v${{ steps.normalise_version.outputs.version }}"
 
       - name: Compress portable binary
         working-directory: ./build/bin
@@ -105,7 +105,7 @@ jobs:
           which makensis && echo "makensis found" || echo "makensis NOT found"
           CGO_ENABLED=1 wails build -clean -platform ${{ matrix.platform }} \
           -nsis -webview2 embed \
-          -ldflags "-X main.version=v${{ steps.normalise_version.outputs.version }}"
+          -ldflags "-H=windowsgui -X main.version=v${{ steps.normalise_version.outputs.version }}"
 
       - name: Rename installer
         working-directory: ./build/bin
