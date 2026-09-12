@@ -5,12 +5,19 @@
 # un release real.
 #
 # Uso:
-#   ./scripts/build-fedora-local.sh [version]
+#   ./scripts/build-fedora-local.sh [version] [repo]
 #
 # version es opcional (default: 0.0.0-dev). No necesita el prefijo "v".
+# repo es opcional (default: whoisfran/portway-manager) y va como
+# "owner/repo" -- es el mismo valor que en CI viaja como
+# main.githubRepo (ver .github/workflows/release-linux-fedora.yaml),
+# de donde App.CheckForUpdates lee el ultimo release de GitHub. Solo
+# hace falta pasarlo distinto si estas probando este script contra un
+# fork.
 set -euo pipefail
 
 VERSION="${1:-0.0.0-dev}"
+REPO="${2:-whoisfran/portway-manager}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
@@ -31,7 +38,9 @@ jq --arg v "$VERSION" '.info.productVersion = $v' wails.json >wails.json.tmp
 mv wails.json.tmp wails.json
 
 echo "==> Compilando frontend + binario (wails build)"
-CGO_ENABLED=1 wails build -platform linux/amd64 -tags webkit2_41 -o portway-manager
+CGO_ENABLED=1 wails build -platform linux/amd64 -tags webkit2_41 \
+	-ldflags "-X main.version=v$VERSION -X main.githubRepo=$REPO" \
+	-o portway-manager
 
 echo "==> Generando spec y .desktop desde las plantillas"
 spec=$(cat build/linux/rpm/portway-manager.spec.template)
