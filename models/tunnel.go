@@ -8,7 +8,7 @@ import (
 type Tunnel struct {
 	ID        string        `json:"id"`
 	Request   TunnelRequest `json:"request"`
-	Status    string        `json:"status"` // starting | running | stopped | error
+	Status    string        `json:"status"` // starting | running | reconnecting | stopped | error
 	StartedAt time.Time     `json:"startedAt"`
 	Message   string        `json:"message"`
 }

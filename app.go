@@ -26,6 +26,7 @@ type App struct {
 	awsProfileLister       domain.AWSProfileLister
 	instanceLister         domain.InstanceLister
 	tunnelStrategies       domain.TunnelStrategyRegistry
+	settingsRepository     domain.SettingsRepository
 }
 
 func NewApp(
@@ -37,6 +38,7 @@ func NewApp(
 	awsProfileLister domain.AWSProfileLister,
 	instanceLister domain.InstanceLister,
 	tunnelStrategies domain.TunnelStrategyRegistry,
+	settingsRepository domain.SettingsRepository,
 ) *App {
 	return &App{
 		tunnelService:          tunnelService,
@@ -47,6 +49,7 @@ func NewApp(
 		awsProfileLister:       awsProfileLister,
 		instanceLister:         instanceLister,
 		tunnelStrategies:       tunnelStrategies,
+		settingsRepository:     settingsRepository,
 	}
 }
 
@@ -86,6 +89,16 @@ func (a *App) CheckPrerequisites() models.Prerequisites {
 // reportar un problema.
 func (a *App) GetVersion() string {
 	return version
+}
+
+// GetSettings expone los ajustes globales de la app (ver Ajustes en el
+// frontend), como la reconexion automatica de tuneles.
+func (a *App) GetSettings() (models.AppSettings, error) {
+	return a.settingsRepository.Get()
+}
+
+func (a *App) SaveSettings(settings models.AppSettings) (models.AppSettings, error) {
+	return a.settingsRepository.Save(settings)
 }
 
 // ---------- Perfiles y regiones de AWS ----------

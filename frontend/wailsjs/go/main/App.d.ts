@@ -14,6 +14,8 @@ export function GetAwsAuthMethod(arg1:string):Promise<string>;
 
 export function GetAwsDefaults():Promise<models.AWSDefaults>;
 
+export function GetSettings():Promise<models.AppSettings>;
+
 export function GetVersion():Promise<string>;
 
 export function HideToTray():Promise<void>;
@@ -35,6 +37,8 @@ export function OpenAwsInstallDocs():Promise<void>;
 export function PickPrivateKeyFile():Promise<string>;
 
 export function SaveFavorite(arg1:models.Favorite):Promise<models.Favorite>;
+
+export function SaveSettings(arg1:models.AppSettings):Promise<models.AppSettings>;
 
 export function StartTunnel(arg1:string):Promise<models.Tunnel>;
 

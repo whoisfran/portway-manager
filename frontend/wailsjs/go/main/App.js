@@ -26,6 +26,10 @@ export function GetAwsDefaults() {
   return window['go']['main']['App']['GetAwsDefaults']();
 }
 
+export function GetSettings() {
+  return window['go']['main']['App']['GetSettings']();
+}
+
 export function GetVersion() {
   return window['go']['main']['App']['GetVersion']();
 }
@@ -68,6 +72,10 @@ export function PickPrivateKeyFile() {
 
 export function SaveFavorite(arg1) {
   return window['go']['main']['App']['SaveFavorite'](arg1);
+}
+
+export function SaveSettings(arg1) {
+  return window['go']['main']['App']['SaveSettings'](arg1);
 }
 
 export function StartTunnel(arg1) {

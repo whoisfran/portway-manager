@@ -13,16 +13,21 @@ export type ConnectionStatus = {
  * nunca se desincronicen:
  *
  * - verde:   el tunel esta corriendo (o arrancando).
- * - rojo:    el ultimo intento de tunel fallo.
- * - naranja: no es un fallo de conexion -- es que al perfil le falta
- *            algo minimo para poder intentar conectar (p.ej. recien
- *            importado sin perfil de AWS, o una conexion SSH sin
- *            host/usuario todavia).
+ * - naranja: el tunel se cayo solo y se esta reintentando (ver
+ *            reconnectLoop en tunnel_service.go), o -- igual que
+ *            antes -- al perfil le falta algo minimo para poder
+ *            intentar conectar (p.ej. recien importado sin perfil de
+ *            AWS, o una conexion SSH sin host/usuario todavia).
+ * - rojo:    el ultimo intento de tunel fallo (se agotaron los
+ *            reintentos, o la reconexion automatica esta apagada).
  * - gris:    sin tunel activo, pero configurado correctamente.
  */
 export function connectionStatus(profile: ConnectionProfile, activeTunnel: Tunnel | undefined): ConnectionStatus {
 	if (activeTunnel?.status === 'error') {
 		return { color: 'error', label: 'Falló la conexión' };
+	}
+	if (activeTunnel?.status === 'reconnecting') {
+		return { color: 'warning', label: 'Reconectando…' };
 	}
 	if (activeTunnel?.status === 'running' || activeTunnel?.status === 'starting') {
 		return { color: 'success', label: 'Listo' };

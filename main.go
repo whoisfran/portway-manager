@@ -43,6 +43,11 @@ func main() {
 		log.Fatalf("no se pudo inicializar el almacen de perfiles: %v", err)
 	}
 
+	settingsStore, err := infrastructure.NewJSONSettingsStore()
+	if err != nil {
+		log.Fatalf("no se pudo inicializar los ajustes de la app: %v", err)
+	}
+
 	tunnelStrategies := infrastructure.NewTunnelStrategyRegistry(
 		ssm.NewTunnelStrategy(),
 		ssh.NewTunnelStrategy(),
@@ -59,7 +64,7 @@ func main() {
 	profileService := application.NewProfileService(profileStore, tunnelStrategies, secretStore)
 
 	app := NewApp(
-		application.NewTunnelService(tunnelStrategies, eventPublisher, portChecker),
+		application.NewTunnelService(tunnelStrategies, eventPublisher, portChecker, settingsStore),
 		profileService,
 		application.NewProfileTransferService(profileService),
 		profileExportGateway,
@@ -67,6 +72,7 @@ func main() {
 		awsProfileLister,
 		instanceLister,
 		tunnelStrategies,
+		settingsStore,
 	)
 
 	// El icono de la bandeja del sistema corre en su propio bucle nativo

@@ -101,7 +101,7 @@ export type TunnelRequest = {
 
 /** Valores posibles de Tunnel.status; se trata como string abierto (no un union cerrado)
  *  porque asi lo emite el backend, y una UI no deberia romperse ante un valor nuevo. */
-export type TunnelStatus = 'starting' | 'running' | 'stopped' | 'error';
+export type TunnelStatus = 'starting' | 'running' | 'reconnecting' | 'stopped' | 'error';
 
 export type Tunnel = {
 	id: string;
@@ -137,4 +137,16 @@ export type ImportFailure = {
 export type ImportResult = {
 	importedCount: number;
 	failures: ImportFailure[];
+};
+
+/**
+ * Ajustes globales de la app (ver Ajustes), sin relacion con ningun
+ * perfil de conexion en particular. Separados por tipo de tunel: un
+ * SSM suele cortarse por timeout de inactividad del lado de AWS
+ * (seguro reintentar solo), mientras que un SSH puede caerse por algo
+ * que conviene que el usuario note.
+ */
+export type AppSettings = {
+	autoReconnectSsm: boolean;
+	autoReconnectSsh: boolean;
 };

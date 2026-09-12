@@ -14,6 +14,20 @@ export namespace models {
 	        this.region = source["region"];
 	    }
 	}
+	export class AppSettings {
+	    autoReconnectSsm: boolean;
+	    autoReconnectSsh: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new AppSettings(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.autoReconnectSsm = source["autoReconnectSsm"];
+	        this.autoReconnectSsh = source["autoReconnectSsh"];
+	    }
+	}
 	export class Favorite {
 	    id: string;
 	    label: string;
