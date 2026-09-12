@@ -23,6 +23,11 @@ export default defineConfig({
 			icon: {
 				clientBundle: { scan: true },
 			},
+			// El tema (claro/oscuro/sistema) lo maneja stores/theme.ts:
+			// desactivamos el plugin de color-mode de Nuxt UI (usa
+			// useDark() de VueUse por su cuenta) para no tener dos
+			// sistemas compitiendo por la clase .dark del <html>.
+			colorMode: false,
 		}),
 	],
 	resolve: {

@@ -14,18 +14,61 @@
 	--font-mono: 'IBM Plex Mono', monospace;
 }
 
+/*
+ * Paleta propia de la app (reemplaza los tokens --ui-* que trae Nuxt UI
+ * por defecto, basados en su escala "neutral"). Se definen los 15
+ * tokens completos en ambos modos para que ningun componente caiga de
+ * vuelta al gris/blanco por defecto de Nuxt UI cuando cambia de clase.
+ *
+ * Claro y oscuro comparten el mismo matiz azul-grisaceo (visto en el
+ * logo/acento primario) para que se sientan como el mismo tema.
+ */
 :root,
+.light {
+	color-scheme: light;
+
+	--ui-text-dimmed: #9aa1ab;
+	--ui-text-muted: #6b7280;
+	--ui-text-toned: #4b515a;
+	--ui-text: #2b2f36;
+	--ui-text-highlighted: #14181d;
+	--ui-text-inverted: #ececef;
+
+	--ui-bg: #f7f8fa;
+	--ui-bg-muted: #eef0f3;
+	--ui-bg-elevated: #ffffff;
+	--ui-bg-accented: #e4e7eb;
+	--ui-bg-inverted: #101820;
+
+	--ui-border: #e2e5e9;
+	--ui-border-muted: #ebedf0;
+	--ui-border-accented: #c9ced4;
+	--ui-border-inverted: #101820;
+}
+
 .dark {
-	--ui-bg: #101820;
-	--ui-bg-elevated: #141c24;
-	--ui-border: #2a2c32;
-	--ui-text: #ececef;
-	--ui-text-muted: #8a8d94;
+	color-scheme: dark;
+
 	--ui-text-dimmed: #5b5e65;
+	--ui-text-muted: #8a8d94;
+	--ui-text-toned: #c7c9ce;
+	--ui-text: #ececef;
+	--ui-text-highlighted: #ffffff;
+	--ui-text-inverted: #101820;
+
+	--ui-bg: #101820;
+	--ui-bg-muted: #0c1319;
+	--ui-bg-elevated: #141c24;
+	--ui-bg-accented: #1c2530;
+	--ui-bg-inverted: #ececef;
+
+	--ui-border: #2a2c32;
+	--ui-border-muted: #22242a;
+	--ui-border-accented: #3a3d45;
+	--ui-border-inverted: #ececef;
 }
 
 html {
-	color-scheme: dark;
 	height: 100%;
 	background: transparent;
 }

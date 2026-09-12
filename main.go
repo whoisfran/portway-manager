@@ -113,6 +113,7 @@ func main() {
 			}
 			watchTunnelStatus(ctx, app)
 			go watchMinimize(ctx)
+			go watchSystemTheme(ctx)
 		},
 		OnShutdown: app.shutdown,
 		Bind: []any{

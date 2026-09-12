@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SettingsPanel from '@/components/SettingsPanel.vue';
 import { useProfileUiStore } from '@/stores/profileUi';
 import { useProfilesStore } from '@/stores/profiles';
 import { ref } from 'vue';
@@ -9,6 +10,7 @@ const toast = useToast();
 
 const exporting = ref(false);
 const importing = ref(false);
+const settingsOpen = ref(false);
 
 async function exportProfiles() {
   exporting.value = true;
@@ -58,13 +60,9 @@ async function importProfiles() {
         @click="exportProfiles" />
     </div>
 
-    <!--
-      Ajustes: sin nada que configurar todavia (ver SettingsPanel.vue),
-      se deja listo pero apagado para no mostrar un boton que no hace
-      nada.
-
-      <UButton icon="i-lucide-settings" color="neutral" variant="ghost" aria-label="Ajustes" @click="settingsOpen = true" />
-      <SettingsPanel v-model:open="settingsOpen" />
-    -->
+    <UButton icon="i-lucide-settings" color="neutral" variant="ghost" aria-label="Ajustes"
+      @click="settingsOpen = true" />
   </div>
+
+  <SettingsPanel v-model:open="settingsOpen" />
 </template>

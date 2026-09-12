@@ -13,3 +13,10 @@ export function onTunnelStatusChanged(handler: (tunnel: Tunnel) => void): () => 
 export function onTunnelLog(handler: (entry: TunnelLogLine) => void): () => void {
 	return EventsOn('tunnel:log', handler);
 }
+
+// Solo lo emite el backend en Linux, cuando detecta un cambio de tema
+// del sistema en caliente (ver systemtheme_linux.go): en Windows/macOS
+// el frontend ya lo detecta solo (ver stores/theme.ts).
+export function onSystemThemeChanged(handler: (prefersDark: boolean) => void): () => void {
+	return EventsOn('system:theme-changed', handler);
+}
