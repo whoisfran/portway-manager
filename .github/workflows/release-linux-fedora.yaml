@@ -78,7 +78,7 @@ jobs:
         shell: bash
         run: |
           CGO_ENABLED=1 wails build -platform ${{ matrix.platform }} \
-          -ldflags "-X main.version=v${{ steps.normalise_version.outputs.version }}" \
+          -ldflags "-X main.version=v${{ steps.normalise_version.outputs.version }} -X main.githubRepo=${{ github.repository }}" \
           -tags webkit2_41 \
           -o portway-manager
 

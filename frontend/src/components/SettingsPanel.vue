@@ -2,7 +2,7 @@
 import { appApi } from '@/api/app';
 import type { ThemeMode } from '@/stores/theme';
 import { useThemeStore } from '@/stores/theme';
-import type { AppSettings } from '@/types/domain';
+import type { AppSettings, UpdateInfo } from '@/types/domain';
 import { onMounted, ref } from 'vue';
 
 const open = defineModel<boolean>('open', { default: false });
@@ -34,6 +34,21 @@ async function updateSetting(key: keyof AppSettings, value: boolean) {
   } catch (err) {
     settings.value = previous;
     toast.add({ title: 'No se pudo guardar el ajuste', description: (err as Error).message, color: 'error' });
+  }
+}
+
+const checkingUpdate = ref(false);
+const updateInfo = ref<UpdateInfo | null>(null);
+
+async function checkForUpdates() {
+  checkingUpdate.value = true;
+  updateInfo.value = null;
+  try {
+    updateInfo.value = await appApi.checkForUpdates();
+  } catch (err) {
+    toast.add({ title: 'No se pudo buscar actualizaciones', description: (err as Error).message, color: 'error' });
+  } finally {
+    checkingUpdate.value = false;
   }
 }
 </script>
@@ -68,9 +83,30 @@ async function updateSetting(key: keyof AppSettings, value: boolean) {
         </div>
       </div>
 
-      <p class="mt-4 border-t border-default pt-4 text-xs text-dimmed select-text">
-        Portway Manager {{ version || '…' }}
-      </p>
+      <div class="mt-4 flex items-center justify-between gap-4 border-t border-default pt-4">
+        <div>
+          <p class="text-xs text-dimmed select-text">Portway Manager {{ version || '…' }}</p>
+          <p v-if="updateInfo" class="text-xs" :class="updateInfo.available ? 'text-primary' : 'text-dimmed'">
+            {{ updateInfo.available ? `Hay una versión nueva: ${updateInfo.latestVersion}` : 'Estás al día' }}
+          </p>
+        </div>
+        <UButton
+          v-if="updateInfo?.available"
+          label="Ver en GitHub"
+          size="xs"
+          variant="soft"
+          @click="appApi.openUpdateUrl(updateInfo.url)"
+        />
+        <UButton
+          v-else
+          label="Buscar actualizaciones"
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          :loading="checkingUpdate"
+          @click="checkForUpdates"
+        />
+      </div>
     </template>
   </UModal>
 </template>

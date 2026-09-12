@@ -27,6 +27,7 @@ type App struct {
 	instanceLister         domain.InstanceLister
 	tunnelStrategies       domain.TunnelStrategyRegistry
 	settingsRepository     domain.SettingsRepository
+	updateChecker          domain.UpdateChecker
 }
 
 func NewApp(
@@ -39,6 +40,7 @@ func NewApp(
 	instanceLister domain.InstanceLister,
 	tunnelStrategies domain.TunnelStrategyRegistry,
 	settingsRepository domain.SettingsRepository,
+	updateChecker domain.UpdateChecker,
 ) *App {
 	return &App{
 		tunnelService:          tunnelService,
@@ -50,6 +52,7 @@ func NewApp(
 		instanceLister:         instanceLister,
 		tunnelStrategies:       tunnelStrategies,
 		settingsRepository:     settingsRepository,
+		updateChecker:          updateChecker,
 	}
 }
 
@@ -99,6 +102,20 @@ func (a *App) GetSettings() (models.AppSettings, error) {
 
 func (a *App) SaveSettings(settings models.AppSettings) (models.AppSettings, error) {
 	return a.settingsRepository.Save(settings)
+}
+
+// CheckForUpdates consulta el ultimo release publicado en GitHub (ver
+// domain.UpdateChecker); la llama tanto el chequeo automatico al
+// iniciar (ver main.go) como el boton manual en Ajustes.
+func (a *App) CheckForUpdates() (models.UpdateInfo, error) {
+	return a.updateChecker.Check(version)
+}
+
+// OpenUpdateURL abre en el navegador del usuario la pagina del release
+// de GitHub que CheckForUpdates encontro. Esta app no se autoactualiza
+// -- el usuario baja e instala la version nueva el mismo.
+func (a *App) OpenUpdateURL(url string) {
+	runtime.BrowserOpenURL(a.ctx, url)
 }
 
 // ---------- Perfiles y regiones de AWS ----------

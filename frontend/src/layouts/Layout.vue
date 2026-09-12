@@ -2,6 +2,7 @@
 import MainToolbar from '@/components/MainToolbar.vue';
 import TitleBar from '@/components/TitleBar.vue';
 import TunnelNotifier from '@/components/tunnels/TunnelNotifier.vue';
+import UpdateNotifier from '@/components/UpdateNotifier.vue';
 </script>
 
 <template>
@@ -12,4 +13,5 @@ import TunnelNotifier from '@/components/tunnels/TunnelNotifier.vue';
   </div>
 
   <TunnelNotifier />
+  <UpdateNotifier />
 </template>

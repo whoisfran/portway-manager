@@ -27,6 +27,14 @@ var assets embed.FS
 // desde los workflows de release; en desarrollo queda como "dev".
 var version = "dev"
 
+// githubRepo identifica, como "owner/repo", el repositorio de GitHub
+// cuyos Releases se consultan para avisar de actualizaciones (ver
+// internal/infrastructure/github_update_checker.go). Igual que
+// version, se puede sobreescribir en build time (-ldflags
+// "-X main.githubRepo=otro-owner/otro-repo") sin tocar este archivo --
+// por si este codigo se reusa en un fork bajo otro owner/repo.
+var githubRepo = "whoisfran/portway-manager"
+
 func main() {
 	log.Printf("Portway Manager %s", version)
 
@@ -60,6 +68,7 @@ func main() {
 	awsProfileLister := infrastructure.NewLocalAWSProfileLister()
 	profileExportGateway := infrastructure.NewJSONProfileExportGateway()
 	secretStore := infrastructure.NewOSKeyringSecretStore()
+	updateChecker := infrastructure.NewGitHubUpdateChecker(githubRepo)
 
 	profileService := application.NewProfileService(profileStore, tunnelStrategies, secretStore)
 
@@ -73,6 +82,7 @@ func main() {
 		instanceLister,
 		tunnelStrategies,
 		settingsStore,
+		updateChecker,
 	)
 
 	// El icono de la bandeja del sistema corre en su propio bucle nativo
@@ -133,6 +143,7 @@ func main() {
 			watchTunnelStatus(ctx, app)
 			go watchMinimize(ctx)
 			go watchSystemTheme(ctx)
+			go checkForUpdatesOnStartup(ctx, app)
 		},
 		OnShutdown: app.shutdown,
 		Bind: []any{

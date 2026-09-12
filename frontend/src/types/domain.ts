@@ -150,3 +150,12 @@ export type AppSettings = {
 	autoReconnectSsm: boolean;
 	autoReconnectSsh: boolean;
 };
+
+/** Resultado de consultar el ultimo release en GitHub (ver api/app.ts). */
+export type UpdateInfo = {
+	available: boolean;
+	currentVersion: string;
+	latestVersion: string;
+	/** Pagina del release en GitHub; se abre con appApi.openUpdateUrl. */
+	url: string;
+};

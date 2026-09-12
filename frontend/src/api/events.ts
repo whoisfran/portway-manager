@@ -1,5 +1,5 @@
 import { EventsOn } from '@wailsjs/runtime';
-import type { Tunnel, TunnelLogLine } from '@/types/domain';
+import type { Tunnel, TunnelLogLine, UpdateInfo } from '@/types/domain';
 
 /**
  * Adaptador tipado sobre los eventos que el backend emite via el
@@ -26,4 +26,10 @@ export function onSystemThemeChanged(handler: (prefersDark: boolean) => void): (
 // en tray.go/main.go), para seleccionar ese perfil al reabrir la ventana.
 export function onProfileSelectRequested(handler: (favoriteId: string) => void): () => void {
 	return EventsOn('profile:select-requested', handler);
+}
+
+// Se emite una sola vez al iniciar (ver checkForUpdatesOnStartup, en
+// update_check.go) si hay una version mas nueva publicada en GitHub.
+export function onUpdateAvailable(handler: (info: UpdateInfo) => void): () => void {
+	return EventsOn('update:available', handler);
 }
