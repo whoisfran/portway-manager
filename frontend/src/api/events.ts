@@ -20,3 +20,10 @@ export function onTunnelLog(handler: (entry: TunnelLogLine) => void): () => void
 export function onSystemThemeChanged(handler: (prefersDark: boolean) => void): () => void {
 	return EventsOn('system:theme-changed', handler);
 }
+
+// Se emite al hacer clic en la notificacion de sistema de un tunel
+// desconectado/con error (ver notifyTunnelEnded y OnNotificationResponse,
+// en tray.go/main.go), para seleccionar ese perfil al reabrir la ventana.
+export function onProfileSelectRequested(handler: (favoriteId: string) => void): () => void {
+	return EventsOn('profile:select-requested', handler);
+}

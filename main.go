@@ -110,6 +110,19 @@ func main() {
 			// alguna sesion minima), esto no debe tumbar la app entera.
 			if err := runtime.InitializeNotifications(ctx); err != nil {
 				log.Printf("no se pudo inicializar el servicio de notificaciones: %v", err)
+			} else {
+				// Sin esto, hacer clic en la notificacion de un tunel
+				// desconectado/con error (ver notifyTunnelEnded, en
+				// tray.go) no hace nada: Wails no reabre la ventana por
+				// su cuenta, hay que pedirselo explicitamente aqui.
+				runtime.OnNotificationResponse(ctx, func(result runtime.NotificationResult) {
+					showWindow(ctx)
+
+					favoriteID, ok := result.Response.UserInfo["favoriteId"].(string)
+					if ok && favoriteID != "" {
+						runtime.EventsEmit(ctx, "profile:select-requested", favoriteID)
+					}
+				})
 			}
 			watchTunnelStatus(ctx, app)
 			go watchMinimize(ctx)

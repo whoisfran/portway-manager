@@ -1,3 +1,4 @@
+import { onProfileSelectRequested } from '@/api/events';
 import { useProfilesStore } from '@/stores/profiles';
 import type { ConnectionProfile } from '@/types/domain';
 import { defineStore } from 'pinia';
@@ -37,6 +38,17 @@ export const useProfileUiStore = defineStore('profileUi', () => {
 
 	function selectProfile(id: string) {
 		selectedProfileId.value = id;
+	}
+
+	// window.runtime todavia no existe corriendo el frontend suelto (vite
+	// dev sin Wails, p.ej.): sin el try/catch, EventsOn tira un error
+	// sincronico aqui mismo que tumba el arranque de toda la app (ver el
+	// mismo patron en stores/theme.ts).
+	try {
+		onProfileSelectRequested(selectProfile);
+	} catch {
+		// noop: sin Wails no hay notificaciones de sistema de las que
+		// recibir este evento.
 	}
 
 	function openCreate() {

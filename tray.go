@@ -196,6 +196,10 @@ func notifyTunnelEnded(ctx context.Context, app *App, tunnel *models.Tunnel) {
 		ID:    tunnel.ID,
 		Title: title,
 		Body:  body,
+		// Recuperado en OnNotificationResponse (ver main.go) para
+		// seleccionar el perfil de esta conexion al hacer clic en la
+		// notificacion, en vez de solo reabrir la ventana.
+		Data: map[string]interface{}{"favoriteId": tunnel.Request.FavoriteID},
 	}); err != nil {
 		log.Printf("no se pudo enviar la notificacion del sistema: %v", err)
 	}
