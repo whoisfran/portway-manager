@@ -1,10 +1,81 @@
-@import '@fontsource/inter/400.css';
-@import '@fontsource/inter/500.css';
-@import '@fontsource/inter/600.css';
-@import '@fontsource/ibm-plex-mono/400.css';
-@import '@fontsource/ibm-plex-mono/500.css';
-@import '@fontsource/ibm-plex-mono/600.css';
-@import '@fontsource/ibm-plex-mono/700.css';
+/*
+ * Los .css de @fontsource traen TODOS los subconjuntos de idioma
+ * (latin, latin-ext, cyrillic, cyrillic-ext, griego, vietnamita...)
+ * como @font-face separados con su propio unicode-range: en un sitio
+ * web normal el navegador solo descarga el que necesita, pero aqui
+ * los archivos quedan embebidos en el binario via
+ * //go:embed all:frontend/dist sin importar si se llegan a usar. Como
+ * la app es español/ingles nada mas, solo hace falta el subconjunto
+ * "latin" (cubre tambien los acentos y ñ del español: todos caen en
+ * el rango U+0000-00FF) -- por eso estos @font-face se copiaron a mano
+ * del "latin" de cada @fontsource/*.css en vez de importar el archivo
+ * completo. Tambien se omite el fallback .woff (formato viejo): los
+ * tres webviews de Wails (WebView2, WebKitGTK, WKWebView) ya soportan
+ * woff2 nativamente.
+ */
+@font-face {
+	font-family: 'Inter';
+	font-style: normal;
+	font-display: swap;
+	font-weight: 400;
+	src: url('@fontsource/inter/files/inter-latin-400-normal.woff2') format('woff2');
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+		U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+	font-family: 'Inter';
+	font-style: normal;
+	font-display: swap;
+	font-weight: 500;
+	src: url('@fontsource/inter/files/inter-latin-500-normal.woff2') format('woff2');
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+		U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+	font-family: 'Inter';
+	font-style: normal;
+	font-display: swap;
+	font-weight: 600;
+	src: url('@fontsource/inter/files/inter-latin-600-normal.woff2') format('woff2');
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+		U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+	font-family: 'IBM Plex Mono';
+	font-style: normal;
+	font-display: swap;
+	font-weight: 400;
+	src: url('@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2') format('woff2');
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+		U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+	font-family: 'IBM Plex Mono';
+	font-style: normal;
+	font-display: swap;
+	font-weight: 500;
+	src: url('@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-500-normal.woff2') format('woff2');
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+		U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+	font-family: 'IBM Plex Mono';
+	font-style: normal;
+	font-display: swap;
+	font-weight: 600;
+	src: url('@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-600-normal.woff2') format('woff2');
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+		U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+	font-family: 'IBM Plex Mono';
+	font-style: normal;
+	font-display: swap;
+	font-weight: 700;
+	src: url('@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-700-normal.woff2') format('woff2');
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+		U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
 @import 'tailwindcss';
 @import '@nuxt/ui';
