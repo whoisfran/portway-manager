@@ -80,6 +80,14 @@ func (a *App) CheckPrerequisites() models.Prerequisites {
 	return a.prerequisitesChecker.Check()
 }
 
+// GetVersion expone la version de la app (ver main.go, sobreescrita en
+// build time con -ldflags "-X main.version=..." por los workflows de
+// release) para que el usuario la vea en Ajustes y la incluya al
+// reportar un problema.
+func (a *App) GetVersion() string {
+	return version
+}
+
 // ---------- Perfiles y regiones de AWS ----------
 
 func (a *App) ListAwsProfiles() ([]string, error) {

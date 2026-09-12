@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { appApi } from '@/api/app';
 import type { ThemeMode } from '@/stores/theme';
 import { useThemeStore } from '@/stores/theme';
+import { onMounted, ref } from 'vue';
 
 const open = defineModel<boolean>('open', { default: false });
 const themeStore = useThemeStore();
@@ -10,6 +12,11 @@ const themeOptions: { label: string; icon: string; value: ThemeMode }[] = [
   { label: 'Oscuro', icon: 'i-lucide-moon', value: 'dark' },
   { label: 'Sistema', icon: 'i-lucide-monitor', value: 'system' },
 ];
+
+const version = ref('');
+onMounted(async () => {
+  version.value = await appApi.getVersion();
+});
 </script>
 
 <template>
@@ -28,6 +35,10 @@ const themeOptions: { label: string; icon: string; value: ThemeMode }[] = [
           @update:model-value="(value: string | number) => themeStore.setMode(value as ThemeMode)"
         />
       </div>
+
+      <p class="mt-4 border-t border-default pt-4 text-xs text-dimmed select-text">
+        Portway Manager {{ version || '…' }}
+      </p>
     </template>
   </UModal>
 </template>

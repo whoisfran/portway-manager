@@ -14,6 +14,8 @@ export function GetAwsAuthMethod(arg1:string):Promise<string>;
 
 export function GetAwsDefaults():Promise<models.AWSDefaults>;
 
+export function GetVersion():Promise<string>;
+
 export function HideToTray():Promise<void>;
 
 export function ImportFavorites():Promise<models.ImportResult>;

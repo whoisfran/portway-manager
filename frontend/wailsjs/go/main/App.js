@@ -26,6 +26,10 @@ export function GetAwsDefaults() {
   return window['go']['main']['App']['GetAwsDefaults']();
 }
 
+export function GetVersion() {
+  return window['go']['main']['App']['GetVersion']();
+}
+
 export function HideToTray() {
   return window['go']['main']['App']['HideToTray']();
 }

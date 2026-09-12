@@ -57,7 +57,16 @@ export const useThemeStore = defineStore('theme', () => {
 			.matchMedia('(prefers-color-scheme: dark)')
 			.addEventListener('change', (e) => (systemPrefersDark.value = e.matches));
 
-		onSystemThemeChanged((prefersDark) => (systemPrefersDark.value = prefersDark));
+		// window.runtime todavia no existe corriendo el frontend suelto
+		// (vite dev sin Wails, p.ej.): sin este try/catch, EventsOn tira
+		// un error sincronico aqui mismo (antes del mount en main.ts) que
+		// tumba el arranque de toda la app.
+		try {
+			onSystemThemeChanged((prefersDark) => (systemPrefersDark.value = prefersDark));
+		} catch {
+			// noop: sin Wails no hay forma de detectar el cambio en
+			// caliente en Linux, pero el resto del tema sigue funcionando.
+		}
 
 		watchEffect(() => {
 			const root = document.documentElement;
