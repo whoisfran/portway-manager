@@ -13,7 +13,8 @@ import (
 
 // watchSystemTheme reenvia al frontend, en caliente, los cambios de la
 // preferencia clara/oscura del sistema (ver systemPrefersDark, en
-// titlebar_linux.go).
+// titlebar_linux.go), y ajusta el icono de la bandeja al nuevo tema
+// (ver trayicon_linux.go).
 //
 // Hace falta porque en Linux el webview (webkit2gtk) no reevalua
 // @media (prefers-color-scheme) cuando GNOME cambia el tema con la
@@ -46,6 +47,7 @@ func watchSystemTheme(ctx context.Context) {
 	scanner := bufio.NewScanner(stdout)
 	for scanner.Scan() {
 		runtime.EventsEmit(ctx, "system:theme-changed", systemPrefersDark())
+		refreshTrayIcon()
 	}
 
 	if err := scanner.Err(); err != nil {

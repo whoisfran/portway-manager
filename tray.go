@@ -59,6 +59,34 @@ type trayMenu struct {
 
 var tray trayMenu
 
+// trayHasTunnels refleja si hay tuneles activos, para que el icono de
+// la bandeja (ver applyTrayIcon en trayicon_*.go) use el color de la
+// marca mientras haya conexiones y el blanco/negro del tema si no.
+// trayIconKey recuerda el icono ya aplicado para no recargarlo en cada
+// refresco.
+var (
+	trayHasTunnels atomic.Bool
+	trayIconMu     sync.Mutex
+	trayIconKey    string
+)
+
+// refreshTrayIcon vuelve a elegir el icono de la bandeja; se llama al
+// cambiar los tuneles activos y al cambiar el tema del sistema.
+func refreshTrayIcon() {
+	applyTrayIcon(trayHasTunnels.Load())
+}
+
+// setTrayIcon aplica un icono solo si es distinto del actual.
+func setTrayIcon(key string, apply func()) {
+	trayIconMu.Lock()
+	defer trayIconMu.Unlock()
+	if key == trayIconKey {
+		return
+	}
+	trayIconKey = key
+	apply()
+}
+
 // trayDone se cierra al apagar la app para detener el watcher de
 // minimizado nativo (ver watchMinimize). No hay problema si el
 // proceso termina sin llegar a cerrarlo: es una sola goroutine que
@@ -71,7 +99,8 @@ var trayDone = make(chan struct{})
 // ventana: por eso los manejadores de clic resuelven el contexto en
 // el momento (getAppContext) en vez de recibirlo por parametro.
 func setupTray(app *App) {
-	systray.SetIcon(trayIconData)
+	refreshTrayIcon()
+	watchTrayTheme()
 	systray.SetTooltip("Portway Manager")
 
 	mOpen := systray.AddMenuItem("Abrir", "Mostrar la ventana de Portway Manager")
@@ -212,6 +241,9 @@ func refreshTrayProfiles(app *App) {
 	sort.Slice(tunnels, func(i, j int) bool {
 		return tunnels[i].StartedAt.Before(tunnels[j].StartedAt)
 	})
+
+	trayHasTunnels.Store(len(tunnels) > 0)
+	refreshTrayIcon()
 
 	if len(tunnels) == 0 {
 		tray.header.SetTitle("Sin conexiones activas")

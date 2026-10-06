@@ -6,41 +6,34 @@ withDefaults(defineProps<{ size?: number }>(), { size: 24 });
 </script>
 
 <template>
-  <svg :width="size" :height="size" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <svg :width="size" :height="size" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="app-logo-bg" x1="0" y1="0" x2="0" y2="512" gradientUnits="userSpaceOnUse">
+      <linearGradient id="app-logo-bg" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stop-color="#4f8cf7" />
         <stop offset="1" stop-color="#0f1a2b" />
       </linearGradient>
+      <radialGradient id="app-logo-glow" cx="12" cy="14" r="7.5" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#8fb6ff" stop-opacity="0.55" />
+        <stop offset="1" stop-color="#4f8cf7" stop-opacity="0" />
+      </radialGradient>
     </defs>
 
-    <rect width="512" height="512" rx="104" fill="url(#app-logo-bg)" />
+    <rect width="1024" height="1024" rx="208" fill="url(#app-logo-bg)" />
 
-    <path
-      d="M 166 366 L 166 256 A 90 90 0 0 1 346 256 L 346 366 Z"
-      fill="#f4f7fb"
-    />
-    <path
-      d="M 202 366 L 202 256 A 54 54 0 0 1 310 256 L 310 366 Z"
-      fill="url(#app-logo-bg)"
-    />
-
-    <path
-      d="M 234 292 L 256 314 L 234 336"
-      fill="none"
-      stroke="#f4f7fb"
-      stroke-width="14"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
-    <path
-      d="M 270 292 L 292 314 L 270 336"
-      fill="none"
-      stroke="#f4f7fb"
-      stroke-width="14"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      opacity="0.85"
-    />
+    <g transform="translate(176 176) scale(28)">
+      <path d="M7 21.5V12A5 5 0 0 1 17 12V21.5Z" fill="url(#app-logo-glow)" />
+      <path
+        d="M2.5 20V12A9.5 9.5 0 0 1 21.5 12V20A1.5 1.5 0 0 1 20 21.5H18.5A1.5 1.5 0 0 1 17 20V12A5 5 0 0 0 7 12V20A1.5 1.5 0 0 1 5.5 21.5H4A1.5 1.5 0 0 1 2.5 20Z"
+        fill="#f4f7fb"
+      />
+      <path
+        d="M10 12.6L13.8 16L10 19.4"
+        fill="none"
+        stroke="#f4f7fb"
+        stroke-width="2.6"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </g>
   </svg>
 </template>
