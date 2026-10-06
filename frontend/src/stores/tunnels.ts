@@ -13,32 +13,35 @@ const TERMINAL_STATUSES = new Set(['stopped', 'error']);
  * (subscribe() es idempotente: puede llamarse desde varios componentes
  * sin duplicar la suscripcion). Cuando un tunel llega a un estado
  * terminal (detenido o con error) el backend ya lo retiro de su propio
- * registro, asi que aqui hacemos lo mismo y dejamos constancia en
- * `notice` para que la UI decida como avisar (p.ej. un toast).
+ * registro, asi que aqui hacemos lo mismo; solo si termino con error
+ * se deja constancia en `notice` para que la UI avise (p.ej. un toast).
+ *
+ * Los logs se guardan por perfil (favoriteId), no por tunel: asi
+ * sobreviven a la desconexion -- que es justo cuando el usuario quiere
+ * leer por que se cayo -- y se limpian recien al volver a iniciar ese
+ * perfil (ver start) o al cerrar la app.
  */
 export const useTunnelsStore = defineStore('tunnels', () => {
 	const tunnels = ref<Record<string, Tunnel>>({});
-	const logsByTunnel = ref<Record<string, string[]>>({});
+	const logsByProfile = ref<Record<string, string[]>>({});
 	const loading = ref(false);
 	const error = ref<string | null>(null);
-	const notice = ref<{ tunnel: Tunnel; isError: boolean } | null>(null);
+	const notice = ref<{ tunnel: Tunnel } | null>(null);
 
 	const activeTunnels = computed(() =>
 		Object.values(tunnels.value).sort((a, b) => (a.startedAt < b.startedAt ? 1 : -1)),
 	);
 
-	function appendLog(id: string, line: string) {
-		const lines = logsByTunnel.value[id] ?? [];
-		logsByTunnel.value = { ...logsByTunnel.value, [id]: [...lines, line].slice(-MAX_LOG_LINES) };
+	function appendLog(favoriteId: string, line: string) {
+		const lines = logsByProfile.value[favoriteId] ?? [];
+		logsByProfile.value = { ...logsByProfile.value, [favoriteId]: [...lines, line].slice(-MAX_LOG_LINES) };
 	}
 
 	function handleStatus(tunnel: Tunnel) {
 		if (TERMINAL_STATUSES.has(tunnel.status)) {
 			const { [tunnel.id]: _removedTunnel, ...restTunnels } = tunnels.value;
-			const { [tunnel.id]: _removedLogs, ...restLogs } = logsByTunnel.value;
 			tunnels.value = restTunnels;
-			logsByTunnel.value = restLogs;
-			notice.value = { tunnel, isError: tunnel.status === 'error' };
+			if (tunnel.status === 'error') notice.value = { tunnel };
 			return;
 		}
 		tunnels.value = { ...tunnels.value, [tunnel.id]: tunnel };
@@ -49,7 +52,7 @@ export const useTunnelsStore = defineStore('tunnels', () => {
 	function subscribe() {
 		if (stopListening) return;
 		const offStatus = onTunnelStatusChanged(handleStatus);
-		const offLog = onTunnelLog(({ id, line }) => appendLog(id, line));
+		const offLog = onTunnelLog(({ favoriteId, line }) => appendLog(favoriteId, line));
 		stopListening = () => {
 			offStatus();
 			offLog();
@@ -70,6 +73,9 @@ export const useTunnelsStore = defineStore('tunnels', () => {
 	}
 
 	async function start(favoriteId: string): Promise<Tunnel> {
+		// Antes de llamar al backend: las lineas que emita la sesion nueva
+		// (incluido un posible error de arranque) ya caen en el log limpio.
+		clearLogs(favoriteId);
 		const tunnel = await tunnelsApi.start(favoriteId);
 		tunnels.value = { ...tunnels.value, [tunnel.id]: tunnel };
 		return tunnel;
@@ -83,9 +89,9 @@ export const useTunnelsStore = defineStore('tunnels', () => {
 		return tunnelsApi.checkPort(localPort);
 	}
 
-	function clearLogs(id: string) {
-		const { [id]: _removed, ...rest } = logsByTunnel.value;
-		logsByTunnel.value = rest;
+	function clearLogs(favoriteId: string) {
+		const { [favoriteId]: _removed, ...rest } = logsByProfile.value;
+		logsByProfile.value = rest;
 	}
 
 	function findFor(profile: ConnectionProfile): Tunnel | undefined {
@@ -94,7 +100,7 @@ export const useTunnelsStore = defineStore('tunnels', () => {
 
 	return {
 		activeTunnels,
-		logsByTunnel,
+		logsByProfile,
 		loading,
 		error,
 		notice,

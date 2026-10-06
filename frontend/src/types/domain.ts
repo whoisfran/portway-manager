@@ -120,6 +120,7 @@ export type PortStatus = {
 
 export type TunnelLogLine = {
 	id: string;
+	favoriteId: string;
 	line: string;
 };
 

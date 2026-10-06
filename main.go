@@ -128,7 +128,7 @@ func main() {
 				log.Printf("no se pudo inicializar el servicio de notificaciones: %v", err)
 			} else {
 				// Sin esto, hacer clic en la notificacion de un tunel
-				// desconectado/con error (ver notifyTunnelEnded, en
+				// que termino con error (ver notifyTunnelEnded, en
 				// tray.go) no hace nada: Wails no reabre la ventana por
 				// su cuenta, hay que pedirselo explicitamente aqui.
 				runtime.OnNotificationResponse(ctx, func(result runtime.NotificationResult) {

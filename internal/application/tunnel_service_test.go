@@ -102,6 +102,9 @@ func (r *fakeSettingsRepo) Save(s models.AppSettings) (models.AppSettings, error
 // vez de adivinar cuanto dormir.
 type fakePublisher struct {
 	statuses chan *models.Tunnel
+
+	mu   sync.Mutex
+	logs []string
 }
 
 func newFakePublisher() *fakePublisher {
@@ -111,12 +114,32 @@ func newFakePublisher() *fakePublisher {
 func (p *fakePublisher) SetContext(context.Context) {}
 
 func (p *fakePublisher) Publish(event string, payload any) {
+	if event == "tunnel:log" {
+		if entry, ok := payload.(map[string]string); ok {
+			p.mu.Lock()
+			p.logs = append(p.logs, entry["line"])
+			p.mu.Unlock()
+		}
+		return
+	}
 	if event != "tunnel:status" {
 		return
 	}
 	if t, ok := payload.(*models.Tunnel); ok {
 		p.statuses <- t
 	}
+}
+
+// hasLog indica si alguna linea de log publicada contiene substr.
+func (p *fakePublisher) hasLog(substr string) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	for _, line := range p.logs {
+		if strings.Contains(line, substr) {
+			return true
+		}
+	}
+	return false
 }
 
 func (p *fakePublisher) next(t *testing.T) *models.Tunnel {
@@ -147,6 +170,7 @@ func newTestManager(strategy *fakeStrategy, settings models.AppSettings) (*tunne
 		settings:          &fakeSettingsRepo{settings: settings},
 		maxReconnectTries: defaultMaxReconnectAttempts,
 		reconnectBackoff:  testReconnectBackoff,
+		stableAfter:       defaultStableAfter,
 	}
 	return m, publisher
 }
@@ -344,5 +368,109 @@ func TestReconnect_StopDuringBackoffPreventsRestart(t *testing.T) {
 	case <-restartAttempted:
 		t.Fatal("no deberia reintentar arrancar el tunel tras un Stop explicito")
 	case <-time.After(backoff * 2):
+	}
+}
+
+// TestReconnect_CleanExitIsTreatedAsDrop cubre el caso tipico de SSM:
+// AWS cierra la sesion (timeout por inactividad, etc) y el plugin sale
+// con codigo 0. Como el usuario no pidio detenerlo, debe reconectarse
+// igual que ante una salida con error.
+func TestReconnect_CleanExitIsTreatedAsDrop(t *testing.T) {
+	var sessions []*fakeSession
+	strategy := &fakeStrategy{favoriteType: models.FavoriteTypeSSM}
+	strategy.startFn = func(call int) (domain.RunningSession, error) {
+		s := newFakeSession()
+		sessions = append(sessions, s)
+		return s, nil
+	}
+
+	m, publisher := newTestManager(strategy, models.AppSettings{AutoReconnectSSM: true})
+
+	if _, err := m.Start(testRequest(models.FavoriteTypeSSM)); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	sessions[0].finish(nil)
+
+	if got := publisher.next(t); got.Status != "reconnecting" {
+		t.Fatalf("status = %q, quiero reconnecting", got.Status)
+	}
+	if got := publisher.next(t); got.Status != "starting" {
+		t.Fatalf("status = %q, quiero starting", got.Status)
+	}
+	if !publisher.hasLog("conexion perdida") || !publisher.hasLog("reintento 1/3") {
+		t.Fatalf("faltan lineas de log de la caida/reintento: %v", publisher.logs)
+	}
+}
+
+// TestReconnect_SessionsThatDieImmediatelyStillCount cubre que una
+// sesion que arranca bien pero muere enseguida (p.ej. AWS rechaza la
+// sesion SSM) siga sumando intentos en vez de reintentar para siempre,
+// y que el motivo final quede en el log y en el mensaje del tunel.
+func TestReconnect_SessionsThatDieImmediatelyStillCount(t *testing.T) {
+	strategy := &fakeStrategy{favoriteType: models.FavoriteTypeSSM}
+	strategy.startFn = func(call int) (domain.RunningSession, error) {
+		s := newFakeSession()
+		if call > 0 {
+			s.finish(fmt.Errorf("TargetNotConnected"))
+		}
+		return s, nil
+	}
+
+	m, publisher := newTestManager(strategy, models.AppSettings{AutoReconnectSSM: true})
+
+	tunnel, err := m.Start(testRequest(models.FavoriteTypeSSM))
+	if err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	m.mu.Lock()
+	session := m.sessions[tunnel.ID].(*fakeSession)
+	m.mu.Unlock()
+	session.finish(fmt.Errorf("conexion perdida"))
+
+	var final *models.Tunnel
+	for final == nil {
+		got := publisher.next(t)
+		if got.Status == "error" {
+			final = got
+		}
+	}
+
+	if !strings.Contains(final.Message, "se agotaron") || !strings.Contains(final.Message, "TargetNotConnected") {
+		t.Fatalf("mensaje final = %q, deberia indicar los reintentos agotados y el ultimo error", final.Message)
+	}
+	if !publisher.hasLog("tunel desconectado: se agotaron") {
+		t.Fatalf("falta la linea de log de desconexion: %v", publisher.logs)
+	}
+	strategy.mu.Lock()
+	calls := strategy.startCalls
+	strategy.mu.Unlock()
+	if calls != 1+defaultMaxReconnectAttempts {
+		t.Fatalf("Start se llamo %d veces, quiero %d", calls, 1+defaultMaxReconnectAttempts)
+	}
+}
+
+// TestStop_LogsDisconnection confirma que una desconexion manual deja
+// constancia en el log y termina en "stopped" (no "error").
+func TestStop_LogsDisconnection(t *testing.T) {
+	strategy := &fakeStrategy{favoriteType: models.FavoriteTypeSSM}
+	strategy.startFn = func(call int) (domain.RunningSession, error) {
+		return newFakeSession(), nil
+	}
+
+	m, publisher := newTestManager(strategy, models.AppSettings{AutoReconnectSSM: true})
+
+	tunnel, err := m.Start(testRequest(models.FavoriteTypeSSM))
+	if err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	if err := m.Stop(tunnel.ID); err != nil {
+		t.Fatalf("Stop: %v", err)
+	}
+
+	if got := publisher.next(t); got.Status != "stopped" {
+		t.Fatalf("status = %q, quiero stopped", got.Status)
+	}
+	if !publisher.hasLog("tunel desconectado") {
+		t.Fatalf("falta la linea de log de desconexion: %v", publisher.logs)
 	}
 }

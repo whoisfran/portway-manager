@@ -4,7 +4,9 @@ import { useTunnelsStore } from '@/stores/tunnels';
 import { watch } from 'vue';
 
 // No renderiza nada: solo traduce las transiciones de estado del
-// store de tuneles (notice) en avisos visibles para el usuario.
+// store de tuneles (notice) en avisos visibles para el usuario. Solo
+// llega para tuneles que terminaron con error: una desconexion manual
+// no avisa (ver stores/tunnels.ts).
 const tunnelsStore = useTunnelsStore();
 const profilesStore = useProfilesStore();
 const toast = useToast();
@@ -22,9 +24,9 @@ watch(
       notice.tunnel.request.instanceLabel ||
       notice.tunnel.request.instanceId;
     toast.add({
-      title: notice.isError ? `El túnel "${label}" terminó con error` : `Túnel "${label}" detenido`,
+      title: `El túnel "${label}" terminó con error`,
       description: notice.tunnel.message || undefined,
-      color: notice.isError ? 'error' : 'neutral',
+      color: 'error',
     });
   },
 );

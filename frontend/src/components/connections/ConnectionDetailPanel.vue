@@ -16,7 +16,7 @@ const toast = useToast();
 
 const profile = computed(() => profileUi.selectedProfile);
 const activeTunnel = computed(() => (profile.value ? tunnelsStore.findFor(profile.value) : undefined));
-const logLines = computed(() => (activeTunnel.value ? tunnelsStore.logsByTunnel[activeTunnel.value.id] ?? [] : []));
+const logLines = computed(() => (profile.value ? tunnelsStore.logsByProfile[profile.value.id] ?? [] : []));
 
 const starting = ref(false);
 const stopping = ref(false);
@@ -101,6 +101,14 @@ function formatLastConnected(iso: string | undefined): string {
 
 function logColor(line: string): string {
   const lower = line.toLowerCase();
+  // Lineas propias de la app (ver logf en tunnel_service.go): reintentos,
+  // desconexiones y su motivo.
+  if (lower.startsWith('[portway]')) {
+    if (lower.includes('tunel desconectado:') || lower.includes('fallo') || lower.includes('no se pudo')) return 'text-red-400';
+    if (lower.includes('conexion perdida') || lower.includes('reintento')) return 'text-amber-400';
+    if (lower.includes('restablecida')) return 'text-green-400';
+    return 'text-muted';
+  }
   if (lower.includes('error') || lower.includes('fall')) return 'text-red-400';
   if (lower.includes('iniciado') || lower.includes('correctamente') || lower.includes('exitosa')) return 'text-green-400';
   if (lower.includes('conectando') || lower.includes('iniciando')) return 'text-blue-400';
@@ -142,7 +150,7 @@ async function remove() {
 }
 
 function clearLogs() {
-  if (activeTunnel.value) tunnelsStore.clearLogs(activeTunnel.value.id);
+  if (profile.value) tunnelsStore.clearLogs(profile.value.id);
 }
 </script>
 

@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 	"time"
 
@@ -35,7 +36,7 @@ type TunnelService interface {
 }
 
 // defaultMaxReconnectAttempts y defaultReconnectBackoff rigen la
-// reconexion automatica (ver await/reconnectLoop) en produccion: unos
+// reconexion automatica (ver await/reconnect) en produccion: unos
 // pocos intentos con una espera fija alcanzan para curar un timeout de
 // inactividad de SSM o un corte de red pasajero, sin insistir
 // indefinidamente contra algo que de verdad dejo de responder
@@ -43,9 +44,14 @@ type TunnelService interface {
 // propios valores (mas cortos) directamente en los campos del struct,
 // en vez de una var de paquete compartida entre goroutines de tests
 // distintos.
+//
+// defaultStableAfter es cuanto tiene que sostenerse conectada una
+// sesion para que su caida cuente como un problema nuevo (contador de
+// intentos desde cero) y no como otro intento fallido del anterior.
 const (
 	defaultMaxReconnectAttempts = 3
 	defaultReconnectBackoff     = 5 * time.Second
+	defaultStableAfter          = 30 * time.Second
 )
 
 type tunnelManager struct {
@@ -58,6 +64,7 @@ type tunnelManager struct {
 	settings          domain.SettingsRepository
 	maxReconnectTries int
 	reconnectBackoff  time.Duration
+	stableAfter       time.Duration
 }
 
 // NewTunnelService crea un TunnelService a partir del registro que
@@ -65,7 +72,7 @@ type tunnelManager struct {
 // que notificara sus cambios de estado, el checker que valida que el
 // puerto local no este ya ocupado antes de intentar abrir el tunel, y
 // el repositorio de ajustes del que lee si toca reconectar solo un
-// tunel que se cayo inesperadamente (ver reconnectLoop).
+// tunel que se cayo inesperadamente (ver reconnect).
 func NewTunnelService(
 	strategies domain.TunnelStrategyRegistry,
 	publisher domain.EventPublisher,
@@ -81,6 +88,7 @@ func NewTunnelService(
 		settings:          settings,
 		maxReconnectTries: defaultMaxReconnectAttempts,
 		reconnectBackoff:  defaultReconnectBackoff,
+		stableAfter:       defaultStableAfter,
 	}
 }
 
@@ -138,6 +146,7 @@ func (m *tunnelManager) Start(req models.TunnelRequest) (*models.Tunnel, error) 
 		m.mu.Lock()
 		delete(m.tunnels, tunnel.ID)
 		m.mu.Unlock()
+		m.logf(tunnel.ID, req.FavoriteID, "no se pudo iniciar el tunel: %v", err)
 
 		tunnel.Status = "error"
 		tunnel.Message = err.Error()
@@ -149,9 +158,7 @@ func (m *tunnelManager) Start(req models.TunnelRequest) (*models.Tunnel, error) 
 	snapshot := *tunnel
 	m.mu.Unlock()
 
-	go m.pump(tunnel.ID, session.Stdout())
-	go m.pump(tunnel.ID, session.Stderr())
-	go m.await(tunnel.ID, session)
+	go m.await(tunnel.ID, req, session)
 
 	return &snapshot, nil
 }
@@ -195,152 +202,224 @@ func (m *tunnelManager) CheckPort(localPort int) models.PortStatus {
 	return models.PortStatus{Available: true}
 }
 
-// pump lee la salida del proceso linea por linea, la reenvia como
-// evento de log y marca el tunel como "running" en cuanto llega la
-// primera linea.
-func (m *tunnelManager) pump(id string, pipe io.Reader) {
+// logf publica una linea de log propia de la app (no del proceso) en
+// el mismo canal que la salida de la sesion, para que el usuario vea
+// en un solo lugar los reintentos, las desconexiones y su motivo. Va
+// con favoriteId para que el frontend conserve el historial por perfil
+// aun despues de que el tunel se retira del registro.
+func (m *tunnelManager) logf(id, favoriteID, format string, args ...any) {
+	m.publisher.Publish("tunnel:log", map[string]string{
+		"id":         id,
+		"favoriteId": favoriteID,
+		"line":       "[portway] " + fmt.Sprintf(format, args...),
+	})
+}
+
+// pump lee la salida de la sesion linea por linea, la reenvia como
+// evento de log y devuelve la ultima linea no vacia (util como motivo
+// de la caida). Solo stdout marca el tunel como "running": la AWS CLI
+// escribe sus errores (credenciales, TargetNotConnected, etc) en
+// stderr, y eso no significa que la sesion haya arrancado.
+func (m *tunnelManager) pump(id, favoriteID string, pipe io.Reader, marksRunning bool, onRunning func()) string {
 	scanner := bufio.NewScanner(pipe)
 	scanner.Buffer(make([]byte, 64*1024), 1024*1024)
 
+	var last string
 	for scanner.Scan() {
-		m.markRunning(id)
+		line := scanner.Text()
+		if strings.TrimSpace(line) != "" {
+			last = strings.TrimSpace(line)
+		}
+		if marksRunning && m.markRunning(id) && onRunning != nil {
+			onRunning()
+		}
 		m.publisher.Publish("tunnel:log", map[string]string{
-			"id":   id,
-			"line": scanner.Text(),
+			"id":         id,
+			"favoriteId": favoriteID,
+			"line":       line,
 		})
 	}
 
 	if err := scanner.Err(); err != nil {
-		m.markError(id, err)
+		m.logf(id, favoriteID, "error leyendo la salida de la sesion: %v", err)
 	}
+	return last
 }
 
 // markRunning realiza la transicion starting -> running una sola vez,
 // protegida por el mutex para evitar condiciones de carrera con Stop
-// y con la goroutine que espera la salida del proceso.
-func (m *tunnelManager) markRunning(id string) {
+// y con la goroutine que espera la salida del proceso. Devuelve true
+// solo para quien efectivamente hizo la transicion.
+func (m *tunnelManager) markRunning(id string) bool {
 	m.mu.Lock()
 	t, ok := m.tunnels[id]
 	if !ok || t.Status != "starting" {
 		m.mu.Unlock()
-		return
+		return false
 	}
 	t.Status = "running"
+	t.Message = ""
 	snapshot := *t
 	m.mu.Unlock()
 
 	m.publisher.Publish("tunnel:status", &snapshot)
+	return true
 }
 
-func (m *tunnelManager) markError(id string, err error) {
-	m.mu.Lock()
-	t, ok := m.tunnels[id]
-	if !ok {
-		m.mu.Unlock()
-		return
+// runSession consume stdout/stderr hasta EOF y solo entonces llama a
+// Wait: exec.Cmd.Wait cierra los pipes en cuanto el proceso termina,
+// asi que llamarlo antes perderia las ultimas lineas (justo las que
+// explican por que se cayo) y haria fallar al scanner con "file
+// already closed". Devuelve el resultado de Wait y la ultima linea
+// que imprimio la sesion, preferentemente de stderr.
+func (m *tunnelManager) runSession(id, favoriteID string, session domain.RunningSession, onRunning func()) (error, string) {
+	var wg sync.WaitGroup
+	var lastOut, lastErr string
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		lastOut = m.pump(id, favoriteID, session.Stdout(), true, onRunning)
+	}()
+	go func() {
+		defer wg.Done()
+		lastErr = m.pump(id, favoriteID, session.Stderr(), false, nil)
+	}()
+	wg.Wait()
+
+	err := session.Wait()
+	if lastErr != "" {
+		return err, lastErr
 	}
-	t.Status = "error"
-	t.Message = err.Error()
-	snapshot := *t
-	m.mu.Unlock()
-
-	m.publisher.Publish("tunnel:status", &snapshot)
-	m.publisher.Publish("tunnel:log", map[string]string{
-		"id":   id,
-		"line": fmt.Sprintf("error leyendo salida del proceso: %v", err),
-	})
+	return err, lastOut
 }
 
-// await espera a que el proceso termine por su cuenta (crash, cierre
-// remoto, etc). Si el tunel ya no esta registrado es porque Stop ya lo
-// finalizo explicitamente, y no hay nada mas que hacer.
+// await acompaña a la sesion de un tunel durante toda su vida,
+// incluidas las reconexiones. Si al terminar la sesion el tunel ya no
+// esta registrado es porque Stop lo finalizo explicitamente, y no hay
+// nada mas que hacer.
 //
-// Una salida limpia (err == nil) se trata igual que un Stop: la app
-// nunca la pidio, pero tampoco hay un error del que reponerse, asi que
-// no se reintenta. Una salida con error es la que puede reconectarse
-// (ver reconnectLoop) si el usuario lo tiene habilitado para este tipo
-// de tunel.
-func (m *tunnelManager) await(id string, session domain.RunningSession) {
+// Cualquier otra salida -- con error o limpia -- es una caida que el
+// usuario no pidio: el session-manager-plugin sale con codigo 0 cuando
+// AWS cierra la sesion (timeout por inactividad, reinicio de la
+// instancia, sesion terminada desde la consola), asi que tratar la
+// salida limpia como un Stop dejaba esos tuneles caidos sin
+// reconectar.
+func (m *tunnelManager) await(id string, req models.TunnelRequest, session domain.RunningSession) {
+	attempt := 0
 	for {
-		err := session.Wait()
-
-		if err == nil {
-			m.mu.Lock()
-			tunnel, ok := m.tunnels[id]
-			if !ok {
-				m.mu.Unlock()
-				return
+		startedAt := time.Now()
+		var onRunning func()
+		if attempt > 0 {
+			n := attempt
+			onRunning = func() {
+				m.logf(id, req.FavoriteID, "conexion restablecida (reintento %d/%d)", n, m.maxReconnectTries)
 			}
-			tunnel.Status = "stopped"
-			delete(m.tunnels, id)
-			delete(m.sessions, id)
-			snapshot := *tunnel
-			m.mu.Unlock()
+		}
 
-			m.publisher.Publish("tunnel:status", &snapshot)
+		exitErr, lastLine := m.runSession(id, req.FavoriteID, session, onRunning)
+
+		m.mu.Lock()
+		tunnel, ok := m.tunnels[id]
+		reachedRunning := ok && tunnel.Status == "running"
+		if ok {
+			delete(m.sessions, id) // la sesion ya termino
+		}
+		m.mu.Unlock()
+		if !ok {
 			return
 		}
 
-		newSession, giveUp := m.reconnectLoop(id, err)
-		if giveUp {
+		// Una sesion que llego a conectar y se mantuvo un rato reinicia
+		// el contador: la siguiente caida es un problema nuevo. Si en
+		// cambio murio enseguida (p.ej. el proceso de SSM arranca bien
+		// pero AWS rechaza la sesion), sigue contando el mismo intento;
+		// si no, un fallo persistente se reintentaria para siempre,
+		// porque arrancar el proceso casi nunca falla por si mismo.
+		if reachedRunning && time.Since(startedAt) >= m.stableAfter {
+			attempt = 0
+		}
+
+		cause := describeExit(exitErr, lastLine)
+		m.logf(id, req.FavoriteID, "conexion perdida: %s", cause)
+
+		session, attempt = m.reconnect(id, req, attempt, cause)
+		if session == nil {
 			return
 		}
-		session = newSession
-		go m.pump(id, session.Stdout())
-		go m.pump(id, session.Stderr())
 	}
 }
 
-// reconnectLoop reintenta abrir el mismo tunel tras una caida
-// inesperada: publica "reconnecting" (para que la UI lo distinga de un
-// error definitivo), espera reconnectBackoff, y prueba de nuevo hasta
-// maxReconnectAttempts. Se rinde -- deja el tunel en "error", como
-// antes de que existiera la reconexion -- si el tipo de tunel tiene la
-// reconexion apagada, si se agotan los intentos, o si el usuario lo
-// detiene mientras tanto (Stop lo quita de m.tunnels; este metodo lo
-// nota en la siguiente vuelta y no sigue insistiendo).
-//
-// Devuelve la sesion nueva si tuvo exito (giveUp=false), para que
-// await seiga esperandola igual que a la original.
-func (m *tunnelManager) reconnectLoop(id string, lastErr error) (session domain.RunningSession, giveUp bool) {
-	m.mu.Lock()
-	tunnel, ok := m.tunnels[id]
-	if !ok {
-		m.mu.Unlock()
-		return nil, true
+// describeExit arma un motivo legible para una sesion que termino
+// sola, combinando el resultado del proceso con lo ultimo que imprimio
+// (que suele ser el mensaje real de la AWS CLI o del plugin).
+func describeExit(err error, lastLine string) string {
+	switch {
+	case err != nil && lastLine != "":
+		return fmt.Sprintf("%s (%v)", lastLine, err)
+	case err != nil:
+		return err.Error()
+	case lastLine != "":
+		return fmt.Sprintf("la sesion termino de forma inesperada: %s", lastLine)
+	default:
+		return "la sesion termino de forma inesperada"
 	}
-	req := tunnel.Request
-	m.mu.Unlock()
+}
 
-	for attempt := 1; attempt <= m.maxReconnectTries && m.autoReconnectEnabled(req.Type); attempt++ {
+// reconnect reintenta abrir el mismo tunel tras una caida: publica
+// "reconnecting" (para que la UI lo distinga de un error definitivo),
+// espera reconnectBackoff, y prueba de nuevo hasta maxReconnectTries,
+// dejando constancia de cada paso en el log. Se rinde -- deja el
+// tunel en "error" con el motivo -- si el tipo de tunel tiene la
+// reconexion apagada o si se agotan los intentos; y sale en silencio
+// si el usuario lo detiene mientras tanto (Stop lo quita de m.tunnels;
+// este metodo lo nota en la siguiente vuelta y no sigue insistiendo).
+//
+// Devuelve la sesion nueva si tuvo exito (nil si no) y el numero de
+// intento en el que va, para que await siga contando si esa sesion
+// tambien se cae enseguida.
+func (m *tunnelManager) reconnect(id string, req models.TunnelRequest, attempt int, cause string) (domain.RunningSession, int) {
+	for {
+		if !m.autoReconnectEnabled(req.Type) {
+			m.fail(id, req.FavoriteID, fmt.Sprintf("reconexion automatica desactivada; motivo: %s", cause))
+			return nil, attempt
+		}
+		if attempt >= m.maxReconnectTries {
+			m.fail(id, req.FavoriteID, fmt.Sprintf(
+				"se agotaron los %d intentos de reconexion; ultimo error: %s", m.maxReconnectTries, cause))
+			return nil, attempt
+		}
+		attempt++
+
 		m.mu.Lock()
 		tunnel, ok := m.tunnels[id]
 		if !ok {
 			m.mu.Unlock()
-			return nil, true
+			return nil, attempt
 		}
 		tunnel.Status = "reconnecting"
-		tunnel.Message = fmt.Sprintf("reintentando (%d/%d) tras: %s", attempt, m.maxReconnectTries, lastErr.Error())
-		delete(m.sessions, id) // la sesion anterior ya termino
+		tunnel.Message = fmt.Sprintf("reintentando (%d/%d) tras: %s", attempt, m.maxReconnectTries, cause)
 		snapshot := *tunnel
 		m.mu.Unlock()
 		m.publisher.Publish("tunnel:status", &snapshot)
+		m.logf(id, req.FavoriteID, "reintento %d/%d en %s...", attempt, m.maxReconnectTries, m.reconnectBackoff)
 
 		time.Sleep(m.reconnectBackoff)
 
 		m.mu.Lock()
-		if _, stillThere := m.tunnels[id]; !stillThere {
-			m.mu.Unlock()
-			return nil, true
-		}
+		_, stillThere := m.tunnels[id]
 		m.mu.Unlock()
+		if !stillThere {
+			return nil, attempt
+		}
 
 		strategy, err := m.strategies.Strategy(req.Type)
+		var session domain.RunningSession
 		if err == nil {
 			session, err = strategy.Start(req)
 		}
 		if err != nil {
-			lastErr = err
+			cause = err.Error()
+			m.logf(id, req.FavoriteID, "reintento %d/%d fallo: %s", attempt, m.maxReconnectTries, cause)
 			continue
 		}
 
@@ -349,7 +428,7 @@ func (m *tunnelManager) reconnectLoop(id string, lastErr error) (session domain.
 		if !ok {
 			m.mu.Unlock()
 			_ = session.Kill()
-			return nil, true
+			return nil, attempt
 		}
 		tunnel.Status = "starting"
 		tunnel.Message = ""
@@ -360,25 +439,32 @@ func (m *tunnelManager) reconnectLoop(id string, lastErr error) (session domain.
 		startedSnapshot := *tunnel
 		m.mu.Unlock()
 		m.publisher.Publish("tunnel:status", &startedSnapshot)
+		m.logf(id, req.FavoriteID, "reintento %d/%d: sesion iniciada, esperando conexion...", attempt, m.maxReconnectTries)
 
-		return session, false
+		return session, attempt
 	}
+}
 
+// fail deja el tunel en "error" con el motivo, lo retira del registro
+// y lo anota en el log. Es el unico camino que termina en un aviso al
+// usuario (toast o notificacion de sistema): una desconexion manual
+// no lo necesita.
+func (m *tunnelManager) fail(id, favoriteID, reason string) {
 	m.mu.Lock()
-	tunnel, ok = m.tunnels[id]
+	tunnel, ok := m.tunnels[id]
 	if !ok {
 		m.mu.Unlock()
-		return nil, true
+		return
 	}
 	tunnel.Status = "error"
-	tunnel.Message = lastErr.Error()
+	tunnel.Message = reason
 	delete(m.tunnels, id)
 	delete(m.sessions, id)
 	snapshot := *tunnel
 	m.mu.Unlock()
 
+	m.logf(id, favoriteID, "tunel desconectado: %s", reason)
 	m.publisher.Publish("tunnel:status", &snapshot)
-	return nil, true
 }
 
 // autoReconnectEnabled lee el ajuste correspondiente al tipo de tunel
@@ -406,10 +492,13 @@ func (m *tunnelManager) autoReconnectEnabled(t models.FavoriteType) bool {
 // La sesion puede no existir aunque el tunel si (sessionOK == false):
 // pasa mientras esta "reconnecting", en la ventana entre que la sesion
 // anterior murio y la siguiente todavia no arranca (ver
-// reconnectLoop). Ahi no hay nada que matar, pero igual hay que
-// quitar el tunel del registro para que reconnectLoop lo note en su
-// siguiente vuelta y no llegue a reconectar algo que el usuario ya
-// detuvo.
+// reconnect). Ahi no hay nada que matar, pero igual hay que quitar
+// el tunel del registro para que reconnect lo note en su siguiente
+// vuelta y no llegue a reconectar algo que el usuario ya detuvo.
+//
+// Se sigue publicando "stopped" (la UI y la bandeja necesitan saber
+// que el tunel ya no esta), pero ni el frontend ni la bandeja avisan
+// por ello: solo "error" amerita un aviso.
 func (m *tunnelManager) Stop(id string) error {
 	m.mu.Lock()
 	tunnel, tunnelOK := m.tunnels[id]
@@ -429,6 +518,7 @@ func (m *tunnelManager) Stop(id string) error {
 	if sessionOK {
 		killErr = session.Kill()
 	}
+	m.logf(id, snapshot.Request.FavoriteID, "tunel desconectado")
 	m.publisher.Publish("tunnel:status", &snapshot)
 	return killErr
 }

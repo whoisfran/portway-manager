@@ -159,9 +159,10 @@ func watchMinimize(ctx context.Context) {
 
 // watchTunnelStatus mantiene el resumen de perfiles activos de la
 // bandeja al dia y, cuando la ventana esta oculta, refleja alli mismo
-// los avisos de desconexion/fallo que el frontend ya muestra como
-// toast (ver frontend/src/stores/tunnels.ts) con una notificacion de
-// sistema.
+// los avisos de fallo que el frontend ya muestra como toast (ver
+// frontend/src/stores/tunnels.ts) con una notificacion de sistema. Una
+// desconexion manual ("stopped") no avisa: el usuario ya sabe que la
+// pidio.
 func watchTunnelStatus(ctx context.Context, app *App) {
 	runtime.EventsOn(ctx, "tunnel:status", func(optionalData ...interface{}) {
 		refreshTrayProfiles(app)
@@ -170,7 +171,7 @@ func watchTunnelStatus(ctx context.Context, app *App) {
 			return
 		}
 		tunnel, ok := optionalData[0].(*models.Tunnel)
-		if !ok || (tunnel.Status != "stopped" && tunnel.Status != "error") {
+		if !ok || tunnel.Status != "error" {
 			return
 		}
 		if !windowHidden.Load() {
@@ -183,13 +184,10 @@ func watchTunnelStatus(ctx context.Context, app *App) {
 func notifyTunnelEnded(ctx context.Context, app *App, tunnel *models.Tunnel) {
 	label := tunnelDisplayLabel(favoritesByID(app), tunnel)
 
-	title := "Tunel detenido"
+	title := "Conexion interrumpida"
 	body := label
-	if tunnel.Status == "error" {
-		title = "Conexion interrumpida"
-		if tunnel.Message != "" {
-			body = fmt.Sprintf("%s: %s", label, tunnel.Message)
-		}
+	if tunnel.Message != "" {
+		body = fmt.Sprintf("%s: %s", label, tunnel.Message)
 	}
 
 	if err := runtime.SendNotification(ctx, runtime.NotificationOptions{
