@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -181,6 +180,16 @@ func watchTunnelStatus(ctx context.Context, app *App) {
 	})
 }
 
+// openFromNotification reabre la ventana al hacer clic en la
+// notificacion de un tunel con error y selecciona su perfil. Wails no
+// reabre la ventana por su cuenta, hay que pedirselo explicitamente.
+func openFromNotification(ctx context.Context, favoriteID string) {
+	showWindow(ctx)
+	if favoriteID != "" {
+		runtime.EventsEmit(ctx, "profile:select-requested", favoriteID)
+	}
+}
+
 func notifyTunnelEnded(ctx context.Context, app *App, tunnel *models.Tunnel) {
 	label := tunnelDisplayLabel(favoritesByID(app), tunnel)
 
@@ -190,17 +199,7 @@ func notifyTunnelEnded(ctx context.Context, app *App, tunnel *models.Tunnel) {
 		body = fmt.Sprintf("%s: %s", label, tunnel.Message)
 	}
 
-	if err := runtime.SendNotification(ctx, runtime.NotificationOptions{
-		ID:    tunnel.ID,
-		Title: title,
-		Body:  body,
-		// Recuperado en OnNotificationResponse (ver main.go) para
-		// seleccionar el perfil de esta conexion al hacer clic en la
-		// notificacion, en vez de solo reabrir la ventana.
-		Data: map[string]interface{}{"favoriteId": tunnel.Request.FavoriteID},
-	}); err != nil {
-		log.Printf("no se pudo enviar la notificacion del sistema: %v", err)
-	}
+	sendNotification(ctx, tunnel.ID, title, body, tunnel.Request.FavoriteID)
 }
 
 // refreshTrayProfiles reconstruye el resumen de "perfiles activos" del

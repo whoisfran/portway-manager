@@ -12,7 +12,6 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/linux"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"portway-manager/internal/application"
 	"portway-manager/internal/infrastructure"
@@ -120,26 +119,7 @@ func main() {
 			app.startup(ctx)
 
 			setAppContext(ctx)
-			// Las notificaciones de sistema son un extra, no algo de lo
-			// que dependa poder usar la app: si el entorno no tiene un
-			// servicio de notificaciones disponible (p.ej. sin D-Bus, o
-			// alguna sesion minima), esto no debe tumbar la app entera.
-			if err := runtime.InitializeNotifications(ctx); err != nil {
-				log.Printf("no se pudo inicializar el servicio de notificaciones: %v", err)
-			} else {
-				// Sin esto, hacer clic en la notificacion de un tunel
-				// que termino con error (ver notifyTunnelEnded, en
-				// tray.go) no hace nada: Wails no reabre la ventana por
-				// su cuenta, hay que pedirselo explicitamente aqui.
-				runtime.OnNotificationResponse(ctx, func(result runtime.NotificationResult) {
-					showWindow(ctx)
-
-					favoriteID, ok := result.Response.UserInfo["favoriteId"].(string)
-					if ok && favoriteID != "" {
-						runtime.EventsEmit(ctx, "profile:select-requested", favoriteID)
-					}
-				})
-			}
+			initNotifications(ctx)
 			watchTunnelStatus(ctx, app)
 			go watchMinimize(ctx)
 			go watchSystemTheme(ctx)
